@@ -12,3 +12,4 @@ Do not place API keys in `index.html`. Configure `ALPHA_VANTAGE_API_KEY` as a Ve
 
 ## Local
 The HTML still preserves the last audited snapshot if external feeds fail.
+Fundamentals rate-safe update deployed
