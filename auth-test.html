@@ -1,0 +1,171 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="robots" content="noindex,nofollow">
+  <title>NCI · Neon Auth Test v0.5</title>
+  <style>
+    body{font-family:Arial,sans-serif;background:#06111d;color:#e8eef5;margin:0;padding:40px}
+    .card{max-width:800px;margin:auto;background:#0b2033;border:1px solid #274761;border-radius:14px;padding:24px}
+    h1{margin-top:0;font-size:22px}.muted{color:#9bb1c3;font-size:14px}
+    button{background:#d6ad32;color:#07111d;border:0;border-radius:8px;padding:12px 16px;font-weight:700;cursor:pointer;margin-right:8px}
+    button.secondary{background:#17344c;color:#e8eef5}
+    pre{white-space:pre-wrap;word-break:break-word;background:#06111d;border:1px solid #274761;padding:14px;border-radius:8px;min-height:150px}
+    .ok{color:#66e59a}.bad{color:#ff7a7a}.warn{color:#ffd166}
+  </style>
+</head>
+<body>
+<div class="card">
+  <h1>North Capital Intelligence · Neon Auth Test v0.5</h1>
+  <p class="muted">Ambiente isolado. Não altera a USD 1.1.02. Usa o cliente oficial Neon Auth.</p>
+  <p id="status">Inicializando...</p>
+  <p>
+    <button id="login" hidden>Entrar com Google</button>
+    <button id="read" class="secondary" hidden>Ler portfolios</button>
+    <button id="logout" class="secondary" hidden>Sair</button>
+  </p>
+  <pre id="out"></pre>
+</div>
+
+<script type="module">
+  import { createAuthClient } from 'https://esm.sh/@neondatabase/auth@0.5.0-beta';
+
+  const $ = (id) => document.getElementById(id);
+  const status = $('status');
+  const out = $('out');
+  const login = $('login');
+  const read = $('read');
+  const logout = $('logout');
+
+  const show = (value) => {
+    out.textContent = typeof value === 'string' ? value : JSON.stringify(value, null, 2);
+  };
+
+  const cleanCallbackParams = () => {
+    const url = new URL(location.href);
+    const keys = ['neon_auth_session_verifier','token_verifier','error','error_description'];
+    let changed = false;
+    for (const key of keys) {
+      if (url.searchParams.has(key)) {
+        url.searchParams.delete(key);
+        changed = true;
+      }
+    }
+    if (changed) history.replaceState({}, '', url.pathname + url.search + url.hash);
+  };
+
+  let auth;
+
+  async function init() {
+    try {
+      const cfgResp = await fetch('/api/v2/auth-config', { cache: 'no-store' });
+      const cfg = await cfgResp.json();
+      if (!cfg.ok) throw new Error(cfg.error || 'Auth config unavailable');
+
+      auth = createAuthClient(cfg.authBaseUrl);
+
+      const sessionResult = await auth.getSession();
+      const session = sessionResult?.data ?? sessionResult ?? null;
+      const user = session?.user ?? sessionResult?.data?.user ?? null;
+
+      if (user) {
+        cleanCallbackParams();
+        status.innerHTML = '<span class="ok">Sessão Neon Auth autenticada.</span>';
+        show({
+          phase: 'SESSION_READY',
+          user: {
+            id: user.id ?? null,
+            email: user.email ?? null,
+            name: user.name ?? null,
+            emailVerified: user.emailVerified ?? null
+          },
+          next: 'Clique em “Ler portfolios”.'
+        });
+        read.hidden = false;
+        logout.hidden = false;
+      } else {
+        const url = new URL(location.href);
+        const err = url.searchParams.get('error');
+        status.innerHTML = err
+          ? '<span class="bad">OAuth retornou erro.</span>'
+          : '<span class="warn">Nenhuma sessão ativa.</span>';
+        show(err ? { error: err, url: location.href } : 'Use “Entrar com Google”.');
+        login.hidden = false;
+      }
+    } catch (e) {
+      status.innerHTML = '<span class="bad">Falha de inicialização.</span>';
+      show({ message: String(e?.message || e), url: location.href });
+    }
+  }
+
+  login.addEventListener('click', async () => {
+    status.textContent = 'Redirecionando para Google...';
+    try {
+      const result = await auth.signIn.social({
+        provider: 'google',
+        callbackURL: `${location.origin}/auth-test.html`
+      });
+      if (result?.error) {
+        status.innerHTML = '<span class="bad">Falha no login.</span>';
+        show(result.error);
+      }
+    } catch (e) {
+      status.innerHTML = '<span class="bad">Falha ao iniciar Google OAuth.</span>';
+      show(String(e?.message || e));
+    }
+  });
+
+  read.addEventListener('click', async () => {
+    status.textContent = 'Obtendo JWT e consultando portfolios...';
+    try {
+      const tokenResult = await auth.getJWTToken?.();
+      const token =
+        (typeof tokenResult === 'string' ? tokenResult : null) ||
+        tokenResult?.data?.token ||
+        tokenResult?.token ||
+        null;
+
+      if (!token) throw new Error('JWT não foi disponibilizado pelo Neon Auth.');
+
+      const resp = await fetch('/api/v2/portfolios', {
+        method: 'GET',
+        headers: { Authorization: `Bearer ${token}` },
+        cache: 'no-store'
+      });
+
+      const data = await resp.json();
+
+      if (resp.status === 403 && data?.error === 'IDENTITY_NOT_LINKED') {
+        const s2 = await auth.getSession();
+        const ss = s2?.data ?? s2 ?? null;
+        const u2 = ss?.user ?? null;
+        status.innerHTML = '<span class="warn">Auth PASS; vínculo NCI pendente.</span>';
+        show({
+          auth: 'PASS',
+          api: data,
+          newAuthUserId: u2?.id ?? null,
+          instruction: 'Atualizar app_users.auth_subject para este novo Auth User ID.'
+        });
+        return;
+      }
+
+      status.innerHTML = data?.ok
+        ? '<span class="ok">READ-ONLY autenticado — PASS.</span>'
+        : '<span class="bad">Consulta autenticada falhou.</span>';
+      show(data);
+    } catch (e) {
+      status.innerHTML = '<span class="bad">Falha no teste autenticado.</span>';
+      show(String(e?.message || e));
+    }
+  });
+
+  logout.addEventListener('click', async () => {
+    await auth.signOut();
+    location.replace('/auth-test.html');
+  });
+
+  init();
+</script>
+</body>
+</html>
