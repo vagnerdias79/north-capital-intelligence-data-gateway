@@ -1,9 +1,0 @@
-{
-  "name": "north-capital-intelligence-data-gateway",
-  "version": "2.0.0-alpha.1",
-  "private": true,
-  "type": "module",
-  "dependencies": {
-    "@neondatabase/serverless": "^1.0.1"
-  }
-}
