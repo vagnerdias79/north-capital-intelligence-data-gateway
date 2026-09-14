@@ -1082,6 +1082,140 @@ html,body{max-width:100%;overflow-x:hidden}.app,.main,.nci-dash{min-width:0;max-
 .bb-download-status.fail{border-color:#7a3128;color:#ef7f70}
 </style>
 
+
+<style id="nci-ui-layout-final">
+/* =========================================================
+   NCI UI LAYOUT FINAL
+   Cabeçalho global responsivo, sem offsets por módulo
+   ========================================================= */
+
+/* Cabeçalho superior precisa participar do fluxo normal
+   e crescer quando os badges ocuparem uma segunda linha. */
+.topbar {
+  position: relative !important;
+  height: auto !important;
+  min-height: 88px !important;
+
+  display: flex !important;
+  flex-wrap: wrap !important;
+  align-items: flex-start !important;
+  align-content: flex-start !important;
+
+  gap: 8px 10px !important;
+
+  box-sizing: border-box !important;
+  padding: 14px 16px 12px !important;
+  margin: 0 0 14px 0 !important;
+
+  overflow: visible !important;
+}
+
+/* Bloco institucional/título ocupa espaço próprio.
+   Nunca pode ser esmagado pelos badges da direita. */
+.topbar > div:first-child {
+  flex: 1 1 290px !important;
+  min-width: 260px !important;
+  box-sizing: border-box !important;
+  padding: 0 !important;
+  margin: 0 auto 0 0 !important;
+  overflow: visible !important;
+}
+
+/* Texto institucional */
+.eyebrow {
+  display: block !important;
+  position: relative !important;
+
+  margin: 0 0 7px 0 !important;
+  padding: 0 !important;
+
+  line-height: 1.35 !important;
+  min-height: 16px !important;
+
+  overflow: visible !important;
+  white-space: normal !important;
+}
+
+/* Título de todas as páginas */
+#pageTitle {
+  display: block !important;
+  position: relative !important;
+
+  margin: 0 !important;
+  padding: 0 0 2px 0 !important;
+
+  line-height: 1.18 !important;
+  min-height: 1.18em !important;
+
+  overflow: visible !important;
+  white-space: normal !important;
+}
+
+/* Anula a regra antiga que comprimia determinados títulos */
+.main:has(#radar.active) #pageTitle,
+.main:has(#rebalance.active) #pageTitle,
+.main:has(#actions.active) #pageTitle,
+.main:has(#portfolio.active) #pageTitle,
+.main:has(#policy.active) #pageTitle,
+.main:has(#history.active) #pageTitle,
+.main:has(#backup.active) #pageTitle {
+  line-height: 1.18 !important;
+  margin: 0 !important;
+  padding-bottom: 2px !important;
+}
+
+/* Cada tela começa somente depois que o cabeçalho terminou.
+   Nenhuma aba recebe offset individual. */
+.main > .screen,
+.main > .screen.active,
+.screen.active {
+  position: relative !important;
+  margin-top: 0 !important;
+  padding-top: 0 !important;
+  overflow: visible !important;
+  z-index: auto !important;
+}
+
+/* Primeiro bloco da tela ganha separação consistente do título */
+.screen.active > :first-child {
+  margin-top: 0 !important;
+}
+
+/* Impede caixas/cards de subirem sobre o cabeçalho */
+.main {
+  overflow: visible !important;
+}
+
+/* Notebook / viewport intermediário:
+   deixa o cabeçalho crescer naturalmente. */
+@media (max-width: 1250px) {
+  .topbar {
+    min-height: 104px !important;
+    padding-top: 14px !important;
+    row-gap: 10px !important;
+  }
+
+  .topbar > div:first-child {
+    flex-basis: 250px !important;
+  }
+}
+
+/* Telas menores: título ocupa uma linha própria antes dos badges */
+@media (max-width: 900px) {
+  .topbar {
+    min-height: unset !important;
+    display: flex !important;
+    flex-direction: row !important;
+    flex-wrap: wrap !important;
+  }
+
+  .topbar > div:first-child {
+    flex: 1 0 100% !important;
+    width: 100% !important;
+  }
+}
+</style>
+
 </head>
 <body>
 <div class="app">
