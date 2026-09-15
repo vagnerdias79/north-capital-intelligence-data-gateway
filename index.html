@@ -2021,6 +2021,98 @@ function printPortfolioReport(mode='synthetic'){
 }
 </style>
 
+
+
+<style id="nci-action-plan-layout-v3">
+/* =========================================================
+   NCI · PLANO DE AÇÕES · LAYOUT v3
+   Corrige o grid no nível dos ARTICLES reais.
+   ========================================================= */
+
+#actions .nci-actions.ac-v3{
+  display:grid !important;
+  grid-template-columns:minmax(0,1fr) minmax(0,1fr) !important;
+  gap:14px !important;
+  align-items:start !important;
+}
+
+/* Cabeçalho/Ciclo de Aporte */
+#actions .nci-actions.ac-v3 > article.ac-command{
+  grid-column:1 / -1 !important;
+}
+
+/* Próximas ações */
+#actions .nci-actions.ac-v3 > article:has(#actionList){
+  grid-column:1 / -1 !important;
+  width:100% !important;
+}
+
+/* Próxima decisão + Market Timing */
+#actions .nci-actions.ac-v3 > article:has(#actionFocus){
+  grid-column:1 !important;
+  width:100% !important;
+  height:auto !important;
+  min-height:0 !important;
+}
+
+/* Ritual do próximo aporte */
+#actions .nci-actions.ac-v3 > article:has(#actionFlow){
+  grid-column:2 !important;
+  width:100% !important;
+  height:auto !important;
+  min-height:0 !important;
+}
+
+/* Controles da Policy */
+#actions .nci-actions.ac-v3 > article:has(#actionControls){
+  grid-column:1 / -1 !important;
+  width:100% !important;
+  height:auto !important;
+  min-height:0 !important;
+}
+
+/* Remove alongamentos artificiais */
+#actions .nci-actions.ac-v3 > article{
+  align-self:start !important;
+  overflow:visible !important;
+}
+
+/* Painéis inferiores mais confortáveis */
+#actions .nci-actions.ac-v3 > article:has(#actionFocus),
+#actions .nci-actions.ac-v3 > article:has(#actionFlow),
+#actions .nci-actions.ac-v3 > article:has(#actionControls){
+  padding:18px !important;
+}
+
+/* Policy em faixa horizontal mais equilibrada */
+#actions #actionControls{
+  display:grid !important;
+  grid-template-columns:repeat(3,minmax(0,1fr)) !important;
+  gap:10px !important;
+}
+
+/* Responsividade */
+@media (max-width:1100px){
+  #actions .nci-actions.ac-v3{
+    grid-template-columns:1fr !important;
+  }
+
+  #actions .nci-actions.ac-v3 > article{
+    grid-column:1 !important;
+  }
+
+  #actions #actionControls{
+    grid-template-columns:repeat(2,minmax(0,1fr)) !important;
+  }
+}
+
+@media (max-width:720px){
+  #actions #actionControls{
+    grid-template-columns:1fr !important;
+  }
+}
+</style>
+
 </head><body><header class="head"><div class="brand">NORTH CAPITAL INTELLIGENCE<span>International Wealth Intelligence</span></div><div class="rtitle"><h1>${title}</h1><p>${subtitle}</p></div></header><div class="kpis"><div class="kpi"><small>Valor atual</small><b>${money(totalValue)}</b></div><div class="kpi"><small>Capital investido</small><b>${money(totalInvested)}</b></div><div class="kpi"><small>Resultado</small><b class="${d.result>=0?'pos':'neg'}">${d.result>=0?'+':''}${money(d.result).replace('$','$')}</b><small>${d.resultPct>=0?'+':''}${pct(d.resultPct)}</small></div><div class="kpi"><small>Ativos</small><b>${PORT.length}</b></div><div class="kpi"><small>Capital Pool</small><b>${money(DB.capitalPool?.inTransit||0)}</b></div></div>${compactTable}${detailedBlocks}<footer class="footer"><span>North Capital Intelligence © 2026 · Relatório gerado a partir do snapshot interno da plataforma.</span><span>Decisão humana · sem execução automática</span></footer><script>window.onload=()=>setTimeout(()=>window.print(),250)<\/script>
 
 
