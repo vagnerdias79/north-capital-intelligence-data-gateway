@@ -4917,4 +4917,212 @@ if(document.readyState==='loading'){
   }
 })();
 </script>
+
+
+<script id="NCI_ACTION_PLAN_OPERATIONAL_OVERLAY_V1">
+(() => {
+  const ENDPOINT = '/api/v2/entry-monitor';
+  const ROOT_ID = 'actions';
+  const HOST_ID = 'actionFocus';
+  const OVERLAY_ID = 'nci-action-plan-operational-overlay';
+
+  const META = {
+    PULLBACK: {
+      label: 'Timing favorável',
+      text: 'Correção relevante de preço. Revisar Policy, valuation, concentração e gates antes de qualquer aporte.'
+    },
+    EXTENDED: {
+      label: 'Aguardar entrada',
+      text: 'Preço estendido. Evitar perseguir o ativo e aguardar melhor relação risco/entrada.'
+    },
+    SPIKE: {
+      label: 'Não perseguir preço',
+      text: 'Aceleração anormal de curto prazo. Preservar disciplina de entrada.'
+    },
+    THESIS_EVENT: {
+      label: 'Revisão prioritária',
+      text: 'Evento material exige revisão de tese antes de qualquer decisão.'
+    }
+  };
+
+  const esc = value => String(value ?? '')
+    .replaceAll('&', '&amp;')
+    .replaceAll('<', '&lt;')
+    .replaceAll('>', '&gt;')
+    .replaceAll('"', '&quot;')
+    .replaceAll("'", '&#039;');
+
+  function buildOverlay(payload) {
+    const states = Array.isArray(payload?.states) ? payload.states : [];
+
+    const relevant = states.filter(item =>
+      item &&
+      item.ticker &&
+      item.priceActionState &&
+      item.priceActionState !== 'NORMAL' &&
+      META[item.priceActionState]
+    );
+
+    if (!relevant.length) return '';
+
+    const priority = ['THESIS_EVENT', 'SPIKE', 'PULLBACK', 'EXTENDED'];
+
+    const groups = relevant.reduce((acc, item) => {
+      (acc[item.priceActionState] ||= []).push(item.ticker);
+      return acc;
+    }, {});
+
+    const rows = priority
+      .filter(state => groups[state]?.length)
+      .map(state => {
+        const meta = META[state];
+        const tickers = groups[state].map(esc).join(', ');
+
+        return `
+          <div style="
+            padding:9px 10px;
+            border:1px solid #27465a;
+            border-radius:8px;
+            background:#091a27;
+          ">
+            <div style="font-size:11px;font-weight:700;color:#e8f1f7">
+              ${esc(meta.label)} · ${tickers}
+            </div>
+            <div style="font-size:10px;color:#9fb2bf;margin-top:3px;line-height:1.4">
+              ${esc(meta.text)}
+            </div>
+          </div>
+        `;
+      })
+      .join('');
+
+    return `
+      <div id="${OVERLAY_ID}" style="
+        margin-top:12px;
+        padding-top:12px;
+        border-top:1px solid #203847;
+      ">
+        <div style="
+          display:flex;
+          justify-content:space-between;
+          gap:10px;
+          align-items:center;
+          margin-bottom:8px;
+        ">
+          <div>
+            <div style="
+              font-size:9px;
+              color:#7f95a3;
+              text-transform:uppercase;
+              letter-spacing:.08em;
+            ">
+              Market Timing Overlay
+            </div>
+            <div style="
+              font-size:12px;
+              font-weight:700;
+              color:#dfeaf0;
+              margin-top:2px;
+            ">
+              Contexto operacional de entrada · ${relevant.length} sinal${relevant.length === 1 ? '' : 'is'}
+            </div>
+          </div>
+          <div style="
+            font-size:9px;
+            color:#77a0b8;
+            border:1px solid #28495c;
+            padding:3px 7px;
+            border-radius:999px;
+            white-space:nowrap;
+          ">
+            PRICE ONLY
+          </div>
+        </div>
+
+        <div style="display:grid;gap:6px">
+          ${rows}
+        </div>
+
+        <div style="
+          margin-top:8px;
+          font-size:9px;
+          color:#718895;
+          line-height:1.4;
+        ">
+          Camada informativa. Não altera prioridade, não supera Policy/gates
+          e não autoriza aporte. Decisão humana permanece obrigatória.
+        </div>
+      </div>
+    `;
+  }
+
+  async function refreshActionPlanOperationalOverlay() {
+    const root = document.getElementById(ROOT_ID);
+    const host = document.getElementById(HOST_ID);
+
+    if (!root || !host || !root.classList.contains('active')) return;
+
+    try {
+      const response = await fetch(ENDPOINT, { cache: 'no-store' });
+
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}`);
+      }
+
+      const payload = await response.json();
+
+      if (
+        payload?.ok !== true ||
+        payload?.mode !== 'READ_ONLY' ||
+        payload?.writeOperationsEnabled !== false ||
+        payload?.signalScope !== 'PRICE_ONLY' ||
+        payload?.decisionAuthorization !== false
+      ) {
+        throw new Error('Invalid Entry Monitor contract');
+      }
+
+      document.getElementById(OVERLAY_ID)?.remove();
+
+      const html = buildOverlay(payload);
+
+      if (html) {
+        host.insertAdjacentHTML('beforeend', html);
+      }
+    } catch (error) {
+      console.warn('[NCI Action Plan Operational Overlay]', error);
+    }
+  }
+
+  window.NCI_refreshActionPlanOperationalOverlay =
+    refreshActionPlanOperationalOverlay;
+
+  const observer = new MutationObserver(() => {
+    const root = document.getElementById(ROOT_ID);
+    if (root?.classList.contains('active')) {
+      setTimeout(refreshActionPlanOperationalOverlay, 50);
+    }
+  });
+
+  const boot = () => {
+    const root = document.getElementById(ROOT_ID);
+    if (!root) return;
+
+    observer.observe(root, {
+      attributes: true,
+      attributeFilter: ['class']
+    });
+
+    if (root.classList.contains('active')) {
+      refreshActionPlanOperationalOverlay();
+    }
+  };
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', boot, { once: true });
+  } else {
+    boot();
+  }
+})();
+</script>
+
 </body></html>
