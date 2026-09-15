@@ -35,25 +35,40 @@ export default async function handler(req, res) {
     );
 
     const universe = tickers.map(ticker => ({
-      ticker,
-      thesisValid: true,
-      eventState: null
+      ticker
     }));
 
+    /*
+     * PRICE-ONLY MODE
+     *
+     * The homologated Entry Monitor requires a thesis-validity boolean.
+     * This endpoint does NOT evaluate thesis. We therefore neutralize that
+     * gate only for the purpose of calculating price behavior.
+     *
+     * The response explicitly marks thesis as NOT_EVALUATED and never
+     * exposes the resulting state as an allocation authorization.
+     */
     const enriched = applyEntryStatesToUniverse(universe, quotes, {
-      thesisValidByTicker: Object.fromEntries(tickers.map(t => [t, true])),
+      thesisValidByTicker:
+        Object.fromEntries(tickers.map(ticker => [ticker, true])),
       eventStateByTicker: {}
     });
 
     const states = enriched.map(asset => ({
       ticker: asset.ticker,
-      priceActionState: asset.priceActionState || 'NORMAL'
+      priceActionState: asset.priceActionState || 'NORMAL',
+      signalScope: 'PRICE_ONLY',
+      thesisStatus: 'NOT_EVALUATED',
+      decisionEligible: false
     }));
 
     res.status(200).json({
       ok: true,
       mode: 'READ_ONLY',
       writeOperationsEnabled: false,
+      signalScope: 'PRICE_ONLY',
+      thesisStatus: 'NOT_EVALUATED',
+      decisionAuthorization: false,
       asOf: new Date().toISOString(),
       count: states.length,
       states
