@@ -1914,6 +1914,113 @@ function printPortfolioReport(mode='synthetic'){
 }
 </style>
 
+
+
+<style id="nci-action-plan-layout-v2">
+/* =========================================================
+   NCI · PLANO DE AÇÕES · LAYOUT v2
+   Somente apresentação. Nenhuma alteração de lógica.
+   ========================================================= */
+
+#actions .ac-v3{
+  display:grid !important;
+  grid-template-columns:minmax(0,1fr) minmax(0,1fr) !important;
+  gap:14px !important;
+  align-items:start !important;
+}
+
+/* Cabeçalho operacional */
+#actions .ac-command{
+  grid-column:1 / -1 !important;
+}
+
+/* Próximas ações recebe toda a largura */
+#actions #actionList{
+  grid-column:1 / -1 !important;
+  width:100% !important;
+}
+
+/* Decisão de capital + Market Timing */
+#actions #actionFocus{
+  grid-column:1 !important;
+  width:100% !important;
+  padding:18px !important;
+}
+
+/* Ritual */
+#actions #actionFlow{
+  grid-column:2 !important;
+  width:100% !important;
+  padding:18px !important;
+}
+
+/* Policy fecha a página ocupando toda a largura */
+#actions #actionControls{
+  grid-column:1 / -1 !important;
+  width:100% !important;
+  padding:18px !important;
+}
+
+/* Mais legibilidade nas linhas de ações */
+#actions #actionList th{
+  font-size:11px !important;
+}
+
+#actions #actionList td{
+  font-size:12px !important;
+  line-height:1.5 !important;
+}
+
+/* Textos internos das caixas inferiores */
+#actions #actionFocus p,
+#actions #actionFlow p,
+#actions #actionControls p{
+  font-size:11.5px !important;
+  line-height:1.5 !important;
+}
+
+#actions #actionFocus small,
+#actions #actionFlow small,
+#actions #actionControls small{
+  font-size:10.5px !important;
+  line-height:1.45 !important;
+}
+
+/* Ritual: evitar cartões comprimidos */
+#actions #actionFlow > div{
+  min-height:0 !important;
+  height:auto !important;
+}
+
+/* Overlay */
+#actions #nci-action-plan-operational-overlay{
+  margin-top:16px !important;
+}
+
+#actions #nci-action-plan-operational-overlay b{
+  font-size:12px !important;
+}
+
+#actions #nci-action-plan-operational-overlay div{
+  line-height:1.5 !important;
+}
+
+/* Notebook / viewport reduzido */
+@media (max-width:1100px){
+  #actions .ac-v3{
+    grid-template-columns:1fr !important;
+  }
+
+  #actions .ac-command,
+  #actions #actionList,
+  #actions #actionFocus,
+  #actions #actionFlow,
+  #actions #actionControls{
+    grid-column:1 !important;
+  }
+}
+</style>
+
 </head><body><header class="head"><div class="brand">NORTH CAPITAL INTELLIGENCE<span>International Wealth Intelligence</span></div><div class="rtitle"><h1>${title}</h1><p>${subtitle}</p></div></header><div class="kpis"><div class="kpi"><small>Valor atual</small><b>${money(totalValue)}</b></div><div class="kpi"><small>Capital investido</small><b>${money(totalInvested)}</b></div><div class="kpi"><small>Resultado</small><b class="${d.result>=0?'pos':'neg'}">${d.result>=0?'+':''}${money(d.result).replace('$','$')}</b><small>${d.resultPct>=0?'+':''}${pct(d.resultPct)}</small></div><div class="kpi"><small>Ativos</small><b>${PORT.length}</b></div><div class="kpi"><small>Capital Pool</small><b>${money(DB.capitalPool?.inTransit||0)}</b></div></div>${compactTable}${detailedBlocks}<footer class="footer"><span>North Capital Intelligence © 2026 · Relatório gerado a partir do snapshot interno da plataforma.</span><span>Decisão humana · sem execução automática</span></footer><script>window.onload=()=>setTimeout(()=>window.print(),250)<\/script>
 
 
