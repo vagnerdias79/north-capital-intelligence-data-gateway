@@ -5467,4 +5467,90 @@ if(document.readyState==='loading'){
 })();
 </script>
 
+
+
+<style id="nci-action-plan-layout-final">
+
+/* NCI Plano de Ações — layout final */
+
+#actions .nci-actions.ac-v3{
+  display:grid !important;
+  grid-template-columns:minmax(0,1fr) minmax(0,1fr) !important;
+  gap:14px !important;
+  align-items:start !important;
+}
+
+/* Ciclo de Aporte */
+#actions .nci-actions.ac-v3 > .ac-command{
+  grid-column:1 / -1 !important;
+  grid-row:auto !important;
+}
+
+/* Próximas ações — largura total */
+#actions .nci-actions.ac-v3 > .ac-queue{
+  grid-column:1 / -1 !important;
+  grid-row:auto !important;
+  width:100% !important;
+  height:auto !important;
+  min-height:0 !important;
+}
+
+/* Decisão + Market Timing */
+#actions .nci-actions.ac-v3 > .ac-focus{
+  grid-column:1 !important;
+  grid-row:auto !important;
+  width:100% !important;
+  height:auto !important;
+  min-height:0 !important;
+  align-self:start !important;
+}
+
+/* Ritual */
+#actions .nci-actions.ac-v3 > .ac-flow{
+  grid-column:2 !important;
+  grid-row:auto !important;
+  width:100% !important;
+  height:auto !important;
+  min-height:0 !important;
+  align-self:start !important;
+}
+
+/* Policy — largura total */
+#actions .nci-actions.ac-v3 > .ac-control{
+  grid-column:1 / -1 !important;
+  grid-row:auto !important;
+  width:100% !important;
+  height:auto !important;
+  min-height:0 !important;
+  align-self:start !important;
+}
+
+/* Policy em três colunas */
+#actions #actionControls{
+  display:grid !important;
+  grid-template-columns:repeat(3,minmax(0,1fr)) !important;
+  gap:10px !important;
+}
+
+/* Responsive real */
+@media (max-width:900px){
+  #actions .nci-actions.ac-v3{
+    grid-template-columns:1fr !important;
+  }
+
+  #actions .nci-actions.ac-v3 > .ac-command,
+  #actions .nci-actions.ac-v3 > .ac-queue,
+  #actions .nci-actions.ac-v3 > .ac-focus,
+  #actions .nci-actions.ac-v3 > .ac-flow,
+  #actions .nci-actions.ac-v3 > .ac-control{
+    grid-column:1 !important;
+  }
+
+  #actions #actionControls{
+    grid-template-columns:repeat(2,minmax(0,1fr)) !important;
+  }
+}
+
+</style>
+
 </body></html>
