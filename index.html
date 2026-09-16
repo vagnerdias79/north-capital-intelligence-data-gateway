@@ -6029,4 +6029,175 @@ if(document.readyState==='loading'){
 })();
 </script>
 
+
+
+<style id="nci-action-table-final-hard-tuning-v2">
+
+/* =========================================================
+   NCI · PRÓXIMAS AÇÕES · FINAL HARD TUNING v2
+   ========================================================= */
+
+#actions #actionList table{
+  width:100% !important;
+  table-layout:fixed !important;
+}
+
+/* redistribuição definitiva */
+#actions #actionList th:nth-child(1),
+#actions #actionList td:nth-child(1){
+  width:4% !important;
+}
+
+#actions #actionList th:nth-child(2),
+#actions #actionList td:nth-child(2){
+  width:10% !important;
+}
+
+#actions #actionList th:nth-child(3),
+#actions #actionList td:nth-child(3){
+  width:19% !important;
+}
+
+#actions #actionList th:nth-child(4),
+#actions #actionList td:nth-child(4){
+  width:34% !important;
+}
+
+#actions #actionList th:nth-child(5),
+#actions #actionList td:nth-child(5){
+  width:9% !important;
+}
+
+#actions #actionList th:nth-child(6),
+#actions #actionList td:nth-child(6){
+  width:24% !important;
+}
+
+/* LEITURA OPERACIONAL */
+#actions #actionList td:nth-child(4),
+#actions #actionList td:nth-child(4) *{
+  font-size:13px !important;
+  line-height:1.5 !important;
+  white-space:normal !important;
+  overflow-wrap:break-word !important;
+  word-break:normal !important;
+}
+
+/* IR PARA */
+#actions #actionList td:nth-child(6){
+  padding:8px 12px !important;
+  overflow:hidden !important;
+  box-sizing:border-box !important;
+}
+
+#actions #actionList td:nth-child(6) button,
+#actions #actionList td:nth-child(6) a,
+#actions #actionList td:nth-child(6) > *{
+  width:100% !important;
+  max-width:100% !important;
+  min-width:0 !important;
+  min-height:46px !important;
+
+  padding:7px 8px !important;
+  margin:0 !important;
+
+  box-sizing:border-box !important;
+
+  display:flex !important;
+  align-items:center !important;
+  justify-content:center !important;
+
+  text-align:center !important;
+
+  font-size:11px !important;
+  line-height:1.25 !important;
+
+  white-space:normal !important;
+  overflow:hidden !important;
+  overflow-wrap:anywhere !important;
+  word-break:normal !important;
+}
+
+#actions #actionList td:nth-child(6) button *,
+#actions #actionList td:nth-child(6) a *{
+  font-size:11px !important;
+  line-height:1.25 !important;
+  white-space:normal !important;
+  overflow-wrap:anywhere !important;
+  max-width:100% !important;
+}
+
+/* cabeçalhos */
+#actions #actionList th{
+  font-size:12px !important;
+  line-height:1.3 !important;
+}
+
+</style>
+
+<script id="nci-action-table-final-hard-tuning-v2-runtime">
+(function(){
+
+  function hardFixActionTable(){
+    const table = document.querySelector('#actions #actionList table');
+    if(!table) return;
+
+    [...table.querySelectorAll('tbody tr')].forEach(row => {
+      const cells = row.children;
+
+      /* leitura operacional */
+      if(cells[3]){
+        cells[3].style.setProperty('font-size','13px','important');
+        cells[3].style.setProperty('line-height','1.5','important');
+
+        cells[3].querySelectorAll('*').forEach(el => {
+          el.style.setProperty('font-size','13px','important');
+          el.style.setProperty('line-height','1.5','important');
+        });
+      }
+
+      /* botão IR PARA */
+      if(cells[5]){
+        cells[5].style.setProperty('width','24%','important');
+        cells[5].style.setProperty('overflow','hidden','important');
+
+        const control =
+          cells[5].querySelector('button,a') ||
+          cells[5].firstElementChild;
+
+        if(control){
+          control.style.setProperty('width','100%','important');
+          control.style.setProperty('max-width','100%','important');
+          control.style.setProperty('min-width','0','important');
+          control.style.setProperty('box-sizing','border-box','important');
+          control.style.setProperty('white-space','normal','important');
+          control.style.setProperty('overflow','hidden','important');
+          control.style.setProperty('overflow-wrap','anywhere','important');
+          control.style.setProperty('font-size','11px','important');
+          control.style.setProperty('line-height','1.25','important');
+
+          control.querySelectorAll('*').forEach(el => {
+            el.style.setProperty('font-size','11px','important');
+            el.style.setProperty('white-space','normal','important');
+            el.style.setProperty('overflow-wrap','anywhere','important');
+          });
+        }
+      }
+    });
+  }
+
+  hardFixActionTable();
+  document.addEventListener('DOMContentLoaded', hardFixActionTable);
+
+  const root = document.querySelector('#actions');
+  if(root){
+    new MutationObserver(hardFixActionTable).observe(root,{
+      childList:true,
+      subtree:true
+    });
+  }
+
+})();
+</script>
+
 </body></html>
