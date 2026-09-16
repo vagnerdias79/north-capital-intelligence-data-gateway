@@ -3347,7 +3347,45 @@ Gates pendentes: ${pend}.`);
     </div>
     <p class="or-footnote">${x.sourceNote||''}</p>
    </article>
-   <article class="or-panel or-gates"><div class="or-heading"><div><h2>Gates para promoção</h2><p>Buy Score mede atratividade; gates medem elegibilidade.</p></div><span class="or-seal">${gs.filter(g=>g[1]==='APROVADA').length}/5 APROVADOS</span></div>
+   
+${((x.ticker||x.symbol||'')==='LLY') ? `
+<article class="or-panel" id="nci-entry-bands-lly-v1">
+  <div class="or-heading">
+    <div>
+      <h2>Faixa de Entrada NCI</h2>
+      <p>Price Gates definidos pela Policy. Informação de entrada; não aprova Valuation automaticamente.</p>
+    </div>
+    <span class="or-seal">POLICY 1.2</span>
+  </div>
+
+  <div style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-top:10px">
+    <div style="border:1px solid #244759;border-radius:8px;padding:10px">
+      <small style="display:block;color:#8fa9b8;margin-bottom:4px">NÍVEL 1</small>
+      <b style="font-size:16px">≤ US$ 1.000</b>
+      <div style="font-size:10px;color:#9fb3c1;margin-top:4px">Entrada inicial</div>
+    </div>
+
+    <div style="border:1px solid #244759;border-radius:8px;padding:10px">
+      <small style="display:block;color:#8fa9b8;margin-bottom:4px">NÍVEL 2</small>
+      <b style="font-size:16px">≤ US$ 925</b>
+      <div style="font-size:10px;color:#9fb3c1;margin-top:4px">Entrada reforçada</div>
+    </div>
+
+    <div style="border:1px solid #244759;border-radius:8px;padding:10px">
+      <small style="display:block;color:#8fa9b8;margin-bottom:4px">NÍVEL 3</small>
+      <b style="font-size:16px">≤ US$ 850</b>
+      <div style="font-size:10px;color:#9fb3c1;margin-top:4px">Entrada de alta convicção</div>
+    </div>
+  </div>
+
+  <div style="margin-top:10px;border-top:1px solid #244759;padding-top:9px;font-size:11px;line-height:1.45;color:#adc2cf">
+    <b style="color:#f2c94c">Status atual: PRICE PENDING.</b>
+    Tese validada; Valuation permanece pendente até o preço atingir uma faixa compatível e a revisão humana confirmar o gate.
+  </div>
+</article>
+` : ''}
+
+<article class="or-panel or-gates"><div class="or-heading"><div><h2>Gates para promoção</h2><p>Buy Score mede atratividade; gates medem elegibilidade.</p></div><span class="or-seal">${gs.filter(g=>g[1]==='APROVADA').length}/5 APROVADOS</span></div>
     <div class="or-gate-list">${gs.map((g,i)=>`<div class="or-gate ${g[1]==='APROVADA'?'pass':g[1]==='BLOQUEADO'?'block':'pending'}"><i>${g[1]==='APROVADA'?'✓':g[1]==='BLOQUEADO'?'!':'·'}</i><div><b>${g[0]}</b><small>${g[2]}</small>${i===0?`<select data-gate-field="thesisStatus" data-gate-ticker="${x.ticker}"><option ${x.thesisStatus==='VALID'?'selected':''}>VALID</option><option ${x.thesisStatus==='VALIDATING'?'selected':''}>VALIDATING</option><option ${x.thesisStatus==='REJECTED'?'selected':''}>REJECTED</option></select>`:i===1?`<select data-gate-field="valuationStatus" data-gate-ticker="${x.ticker}"><option ${x.valuationStatus==='ATTRACTIVE'?'selected':''}>ATTRACTIVE</option><option ${x.valuationStatus==='FAIR'?'selected':''}>FAIR</option><option ${x.valuationStatus==='WAIT'?'selected':''}>WAIT</option><option ${x.valuationStatus==='PENDING'?'selected':''}>PENDING</option></select>`:i===2?`<select data-gate-field="overlapStatus" data-gate-ticker="${x.ticker}"><option ${x.overlapStatus==='PASS'?'selected':''}>PASS</option><option ${x.overlapStatus==='BLOCK'?'selected':''}>BLOCK</option><option ${x.overlapStatus==='PENDING'?'selected':''}>PENDING</option></select>`:''}</div><em>${g[1]}</em></div>`).join('')}</div>
     <div class="or-human-gate"><b>DECISÃO HUMANA OBRIGATÓRIA.</b> Mesmo com 5/5 gates aprovados, a promoção para ENTRY CANDIDATE só ocorre manualmente pelo botão “Promover estágio”.</div>
    </article>`;
