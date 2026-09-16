@@ -6386,4 +6386,54 @@ if(document.readyState==='loading'){
 
 </style>
 
+
+
+<style id="nci-entry-bands-placement-v1">
+/* Faixa de Entrada deve viver na coluna da Ficha decisória */
+#nci-entry-bands-lly-v1{
+  width:100% !important;
+  box-sizing:border-box !important;
+  margin:0 0 10px 0 !important;
+}
+
+/* Na coluna estreita, os três níveis ficam empilhados */
+#nci-entry-bands-lly-v1 > div[style*="grid-template-columns"]{
+  grid-template-columns:1fr !important;
+  gap:8px !important;
+}
+
+#nci-entry-bands-lly-v1 b{
+  font-size:15px !important;
+}
+</style>
+
+<script id="nci-entry-bands-placement-v1-runtime">
+(function(){
+
+  function placeEntryBands(){
+    const bands = document.getElementById('nci-entry-bands-lly-v1');
+    const gates = document.querySelector('#radar .or-gates, section#radar .or-gates, .or-gates');
+
+    if(!bands || !gates || !gates.parentElement) return;
+
+    const parent = gates.parentElement;
+
+    if(bands.parentElement !== parent || bands.nextElementSibling !== gates){
+      parent.insertBefore(bands, gates);
+    }
+  }
+
+  placeEntryBands();
+  document.addEventListener('DOMContentLoaded', placeEntryBands);
+
+  const radar = document.querySelector('#radar') || document.body;
+
+  new MutationObserver(placeEntryBands).observe(radar,{
+    childList:true,
+    subtree:true
+  });
+
+})();
+</script>
+
 </body></html>
