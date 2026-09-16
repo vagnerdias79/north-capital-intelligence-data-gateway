@@ -772,8 +772,8 @@ html,body{max-width:100%;overflow-x:hidden}.app,.main,.nci-dash{min-width:0;max-
 #actions .ac-control-card.watch{border-color:#705624;background:#1b1609}
 #actions .ac-control-card.watch b{color:#e6bd50}
 @media(max-width:1100px){
- #actions .nci-actions.ac-v3{grid-template-columns:1fr}
- #actions .ac-v3 .ac-command,#actions .ac-v3 .ac-queue,#actions .ac-v3 .ac-focus,#actions .ac-v3 .ac-flow,#actions .ac-v3 .ac-control{grid-column:1;grid-row:auto}
+ 
+ 
 }
 </style>
 
@@ -1771,7 +1771,349 @@ function printPortfolioReport(mode='synthetic'){
  const policyAlerts=d.alerts.length?d.alerts.map(x=>`<li><b>${reportEsc(x.ticker)}</b> — ${pct(x.weight)} do portfólio, acima do teto de 10% para ação individual.</li>`).join(''):'<li>Nenhuma ação individual acima do teto operacional de 10%.</li>';
  const detailedBlocks=detailed?`<section><h2>Composição e concentração</h2><div class="cols"><div class="box"><h3>Alocação por classe</h3><p>ETFs RV <b>${pct(d.etf/totalValue)}</b> · Ações <b>${pct(d.stocks/totalValue)}</b> · Caixa USD <b>${pct(d.cash/totalValue)}</b></p><p>Mandato 55/45 é medido somente sobre a renda variável; TFLO é caixa e fica fora desse cálculo.</p></div><div class="box"><h3>Maiores posições</h3>${d.leaders.map(x=>`<p><b>${reportEsc(x.ticker)}</b> ${pct(x.weight)} · ${reportEsc(x.category)}</p>`).join('')}</div></div></section><section><h2>Policy & alertas</h2><div class="box"><ul>${policyAlerts}</ul><p>Capital Pool em trânsito: <b>${money(DB.capitalPool?.inTransit||0)}</b>. Deployment obrigatório: <b>${money(DB.capitalPool?.mandatoryDeployment||0)}</b>.</p></div></section><section><h2>Papel estratégico das posições</h2>${reportTable(d.current,true)}</section>${reportAllAssetOperations(d.current)}`:'';
  const compactTable=detailed?'':`<section><h2>Posições atuais</h2>${reportTable(d.current,false)}</section><section class="footgrid"><div class="box"><h3>Alocação por classe</h3><p>ETFs RV <b>${pct(d.etf/totalValue)}</b> · Ações <b>${pct(d.stocks/totalValue)}</b> · Caixa USD <b>${pct(d.cash/totalValue)}</b></p></div><div class="box"><h3>Alertas de Policy</h3><ul>${policyAlerts}</ul></div><div class="box"><h3>Capital Pool</h3><p><b>${money(DB.capitalPool?.inTransit||0)}</b> em trânsito</p></div></section>`;
- const html=`<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><title>NCI — ${title}</title><style>@page{size:A4 landscape;margin:10mm}*{box-sizing:border-box}body{font:10px/1.35 Arial,sans-serif;color:#132236;margin:0;background:#fff}.head{display:flex;justify-content:space-between;align-items:flex-end;border-bottom:3px solid #c79a32;padding-bottom:10px;margin-bottom:12px}.brand{font-size:20px;font-weight:700;letter-spacing:.5px;color:#071827}.brand span{display:block;font-size:9px;font-weight:400;letter-spacing:2px;color:#9a7424;text-transform:uppercase;margin-top:3px}.rtitle{text-align:right}.rtitle h1{font-size:15px;margin:0}.rtitle p{margin:3px 0 0;color:#66768a}.kpis{display:grid;grid-template-columns:repeat(5,1fr);gap:7px;margin-bottom:12px}.kpi,.box{border:1px solid #cbd4dc;border-radius:6px;padding:8px;background:#f8fafb}.kpi small,.box small{display:block;color:#6e7b89;font-size:8px}.kpi b{display:block;font-size:15px;margin-top:3px}.pos{color:#14764f}.neg{color:#b43136}h2{font-size:12px;margin:12px 0 6px;color:#132236;border-left:3px solid #c79a32;padding-left:6px}h3{font-size:10px;margin:0 0 5px;color:#6b5420}table{width:100%;border-collapse:collapse;table-layout:auto}th{background:#12253a;color:#fff;text-align:left;padding:5px 5px;font-size:7px;text-transform:uppercase}td{border-bottom:1px solid #d9e0e6;padding:4px 5px;vertical-align:top;font-size:7.5px}td small{display:block;color:#75818d;font-size:6.5px;margin-top:1px}.cols{display:grid;grid-template-columns:1fr 1fr;gap:8px}.footgrid{display:grid;grid-template-columns:1fr 1.5fr 1fr;gap:8px}ul{margin:3px 0;padding-left:16px}.footer{margin-top:10px;padding-top:6px;border-top:1px solid #ccd5dd;color:#7a8793;font-size:7px;display:flex;justify-content:space-between}.no-break{break-inside:avoid}.operations-section{break-before:page}.operations-note{margin-bottom:10px}.operations-note p{margin:2px 0}.asset-ops{margin:0 0 12px;border:1px solid #cbd4dc;border-radius:6px;overflow:hidden;break-inside:avoid}.asset-head{display:flex;justify-content:space-between;align-items:center;background:#f3f6f8;padding:7px 8px;border-bottom:1px solid #cbd4dc}.asset-head h3{margin:0;color:#132236;font-size:10px}.asset-head p{margin:2px 0 0;color:#66768a;font-size:7px}.asset-head>div:last-child{text-align:right}.asset-head>div:last-child b{display:block;font-size:11px}.asset-head>div:last-child small{font-size:6.5px;color:#75818d}.ops-table th{font-size:6.5px;padding:4px}.ops-table td{font-size:7px;padding:4px}.ops-table td small{font-size:6px;color:#7a8793}.op-badge{display:inline-block;padding:2px 5px;border-radius:999px;font-weight:700;border:1px solid #9aa7b2}.op-buy{color:#14764f;background:#edf8f3;border-color:#84bea6}.op-sell{color:#b43136;background:#fff1f1;border-color:#d9a0a2}.op-dividend{color:#176a91;background:#eef8fd;border-color:#8cc5df}.op-tax{color:#9a5a12;background:#fff6e8;border-color:#e3b877}@media print{button{display:none}}</style></head><body><header class="head"><div class="brand">NORTH CAPITAL INTELLIGENCE<span>International Wealth Intelligence</span></div><div class="rtitle"><h1>${title}</h1><p>${subtitle}</p></div></header><div class="kpis"><div class="kpi"><small>Valor atual</small><b>${money(totalValue)}</b></div><div class="kpi"><small>Capital investido</small><b>${money(totalInvested)}</b></div><div class="kpi"><small>Resultado</small><b class="${d.result>=0?'pos':'neg'}">${d.result>=0?'+':''}${money(d.result).replace('$','$')}</b><small>${d.resultPct>=0?'+':''}${pct(d.resultPct)}</small></div><div class="kpi"><small>Ativos</small><b>${PORT.length}</b></div><div class="kpi"><small>Capital Pool</small><b>${money(DB.capitalPool?.inTransit||0)}</b></div></div>${compactTable}${detailedBlocks}<footer class="footer"><span>North Capital Intelligence © 2026 · Relatório gerado a partir do snapshot interno da plataforma.</span><span>Decisão humana · sem execução automática</span></footer><script>window.onload=()=>setTimeout(()=>window.print(),250)<\/script>
+ const html=`<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><title>NCI — ${title}</title><style>@page{size:A4 landscape;margin:10mm}*{box-sizing:border-box}body{font:10px/1.35 Arial,sans-serif;color:#132236;margin:0;background:#fff}.head{display:flex;justify-content:space-between;align-items:flex-end;border-bottom:3px solid #c79a32;padding-bottom:10px;margin-bottom:12px}.brand{font-size:20px;font-weight:700;letter-spacing:.5px;color:#071827}.brand span{display:block;font-size:9px;font-weight:400;letter-spacing:2px;color:#9a7424;text-transform:uppercase;margin-top:3px}.rtitle{text-align:right}.rtitle h1{font-size:15px;margin:0}.rtitle p{margin:3px 0 0;color:#66768a}.kpis{display:grid;grid-template-columns:repeat(5,1fr);gap:7px;margin-bottom:12px}.kpi,.box{border:1px solid #cbd4dc;border-radius:6px;padding:8px;background:#f8fafb}.kpi small,.box small{display:block;color:#6e7b89;font-size:8px}.kpi b{display:block;font-size:15px;margin-top:3px}.pos{color:#14764f}.neg{color:#b43136}h2{font-size:12px;margin:12px 0 6px;color:#132236;border-left:3px solid #c79a32;padding-left:6px}h3{font-size:10px;margin:0 0 5px;color:#6b5420}table{width:100%;border-collapse:collapse;table-layout:auto}th{background:#12253a;color:#fff;text-align:left;padding:5px 5px;font-size:7px;text-transform:uppercase}td{border-bottom:1px solid #d9e0e6;padding:4px 5px;vertical-align:top;font-size:7.5px}td small{display:block;color:#75818d;font-size:6.5px;margin-top:1px}.cols{display:grid;grid-template-columns:1fr 1fr;gap:8px}.footgrid{display:grid;grid-template-columns:1fr 1.5fr 1fr;gap:8px}ul{margin:3px 0;padding-left:16px}.footer{margin-top:10px;padding-top:6px;border-top:1px solid #ccd5dd;color:#7a8793;font-size:7px;display:flex;justify-content:space-between}.no-break{break-inside:avoid}.operations-section{break-before:page}.operations-note{margin-bottom:10px}.operations-note p{margin:2px 0}.asset-ops{margin:0 0 12px;border:1px solid #cbd4dc;border-radius:6px;overflow:hidden;break-inside:avoid}.asset-head{display:flex;justify-content:space-between;align-items:center;background:#f3f6f8;padding:7px 8px;border-bottom:1px solid #cbd4dc}.asset-head h3{margin:0;color:#132236;font-size:10px}.asset-head p{margin:2px 0 0;color:#66768a;font-size:7px}.asset-head>div:last-child{text-align:right}.asset-head>div:last-child b{display:block;font-size:11px}.asset-head>div:last-child small{font-size:6.5px;color:#75818d}.ops-table th{font-size:6.5px;padding:4px}.ops-table td{font-size:7px;padding:4px}.ops-table td small{font-size:6px;color:#7a8793}.op-badge{display:inline-block;padding:2px 5px;border-radius:999px;font-weight:700;border:1px solid #9aa7b2}.op-buy{color:#14764f;background:#edf8f3;border-color:#84bea6}.op-sell{color:#b43136;background:#fff1f1;border-color:#d9a0a2}.op-dividend{color:#176a91;background:#eef8fd;border-color:#8cc5df}.op-tax{color:#9a5a12;background:#fff6e8;border-color:#e3b877}@media print{button{display:none}}</style>
+
+<style id="nci-action-plan-readability-v1">
+/* =========================================================
+   NCI · PLANO DE AÇÕES · READABILITY v1
+   Escopo visual apenas. Nenhuma alteração de lógica.
+   ========================================================= */
+
+#actions {
+  font-size: 13px;
+}
+
+/* Cards e caixas: mais respiro e altura natural */
+#actions .ac-v3 article,
+#actions .ac-v3 > div,
+#actions .ac-command,
+#actions .ac-queue,
+#actions .ac-focus,
+#actions .ac-flow,
+#actions .ac-control {
+  min-height: 0 !important;
+  height: auto !important;
+  overflow: visible !important;
+}
+
+/* Títulos principais */
+#actions h2 {
+  font-size: 19px !important;
+  line-height: 1.25 !important;
+}
+
+#actions h3 {
+  font-size: 15px !important;
+  line-height: 1.3 !important;
+}
+
+/* Texto normal */
+#actions p,
+#actions td,
+#actions li,
+#actions label {
+  font-size: 12px !important;
+  line-height: 1.5 !important;
+}
+
+/* Textos auxiliares não podem ficar microscópicos */
+#actions small,
+#actions .small,
+#actions [class*="note"],
+#actions [class*="meta"],
+#actions [class*="sub"] {
+  font-size: 10.5px !important;
+  line-height: 1.45 !important;
+}
+
+/* Tabela "Próximas ações" */
+#actions table {
+  font-size: 12px !important;
+}
+
+#actions th {
+  font-size: 10.5px !important;
+  line-height: 1.35 !important;
+  padding: 10px 8px !important;
+}
+
+#actions td {
+  padding: 11px 8px !important;
+  vertical-align: top !important;
+}
+
+/* Botões */
+#actions button {
+  min-height: 36px !important;
+  padding: 8px 12px !important;
+  font-size: 11px !important;
+  line-height: 1.25 !important;
+}
+
+/* Badges */
+#actions [class*="badge"],
+#actions [class*="pill"],
+#actions [class*="seal"] {
+  font-size: 9.5px !important;
+  line-height: 1.2 !important;
+  padding-top: 4px !important;
+  padding-bottom: 4px !important;
+}
+
+/* Cards da coluna lateral */
+#actions .ac-focus,
+#actions .ac-flow,
+#actions .ac-control {
+  padding: 16px !important;
+}
+
+/* Evita caixas muito comprimidas */
+#actions .ac-v3 {
+  align-items: start !important;
+}
+
+#actions .ac-v3 > * {
+  min-width: 0 !important;
+}
+
+/* Overlay novo */
+#actions #nci-action-plan-operational-overlay {
+  margin-top: 14px !important;
+  padding-top: 14px !important;
+}
+
+#actions #nci-action-plan-operational-overlay > div:first-child div:nth-child(2) {
+  font-size: 13px !important;
+}
+
+#actions #nci-action-plan-operational-overlay b {
+  font-size: 11.5px !important;
+  line-height: 1.4 !important;
+}
+
+#actions #nci-action-plan-operational-overlay div {
+  line-height: 1.45;
+}
+
+/* Em notebooks, preservar leitura antes de tentar compactar tudo */
+@media (max-width: 1250px) {
+  #actions {
+    font-size: 12.5px;
+  }
+
+  #actions p,
+  #actions td,
+  #actions li,
+  #actions label {
+    font-size: 11.5px !important;
+  }
+
+  #actions small {
+    font-size: 10px !important;
+  }
+}
+</style>
+
+
+
+<style id="nci-action-plan-layout-v2">
+/* =========================================================
+   NCI · PLANO DE AÇÕES · LAYOUT v2
+   Somente apresentação. Nenhuma alteração de lógica.
+   ========================================================= */
+
+#actions .ac-v3{
+  display:grid !important;
+  grid-template-columns:minmax(0,1fr) minmax(0,1fr) !important;
+  gap:14px !important;
+  align-items:start !important;
+}
+
+/* Cabeçalho operacional */
+#actions .ac-command{
+  grid-column:1 / -1 !important;
+}
+
+/* Próximas ações recebe toda a largura */
+#actions #actionList{
+  grid-column:1 / -1 !important;
+  width:100% !important;
+}
+
+/* Decisão de capital + Market Timing */
+#actions #actionFocus{
+  grid-column:1 !important;
+  width:100% !important;
+  padding:18px !important;
+}
+
+/* Ritual */
+#actions #actionFlow{
+  grid-column:2 !important;
+  width:100% !important;
+  padding:18px !important;
+}
+
+/* Policy fecha a página ocupando toda a largura */
+#actions #actionControls{
+  grid-column:1 / -1 !important;
+  width:100% !important;
+  padding:18px !important;
+}
+
+/* Mais legibilidade nas linhas de ações */
+#actions #actionList th{
+  font-size:11px !important;
+}
+
+#actions #actionList td{
+  font-size:12px !important;
+  line-height:1.5 !important;
+}
+
+/* Textos internos das caixas inferiores */
+#actions #actionFocus p,
+#actions #actionFlow p,
+#actions #actionControls p{
+  font-size:11.5px !important;
+  line-height:1.5 !important;
+}
+
+#actions #actionFocus small,
+#actions #actionFlow small,
+#actions #actionControls small{
+  font-size:10.5px !important;
+  line-height:1.45 !important;
+}
+
+/* Ritual: evitar cartões comprimidos */
+#actions #actionFlow > div{
+  min-height:0 !important;
+  height:auto !important;
+}
+
+/* Overlay */
+#actions #nci-action-plan-operational-overlay{
+  margin-top:16px !important;
+}
+
+#actions #nci-action-plan-operational-overlay b{
+  font-size:12px !important;
+}
+
+#actions #nci-action-plan-operational-overlay div{
+  line-height:1.5 !important;
+}
+
+/* Notebook / viewport reduzido */
+@media (max-width:1100px){
+  #actions .ac-v3{
+    grid-template-columns:1fr !important;
+  }
+
+  #actions .ac-command,
+  #actions #actionList,
+  #actions #actionFocus,
+  #actions #actionFlow,
+  #actions #actionControls{
+    grid-column:1 !important;
+  }
+}
+</style>
+
+
+
+<style id="nci-action-plan-layout-v3">
+/* =========================================================
+   NCI · PLANO DE AÇÕES · LAYOUT v3
+   Corrige o grid no nível dos ARTICLES reais.
+   ========================================================= */
+
+#actions .nci-actions.ac-v3{
+  display:grid !important;
+  grid-template-columns:minmax(0,1fr) minmax(0,1fr) !important;
+  gap:14px !important;
+  align-items:start !important;
+}
+
+/* Cabeçalho/Ciclo de Aporte */
+#actions .nci-actions.ac-v3 > article.ac-command{
+  grid-column:1 / -1 !important;
+}
+
+/* Próximas ações */
+#actions .nci-actions.ac-v3 > article:has(#actionList){
+  grid-column:1 / -1 !important;
+  width:100% !important;
+}
+
+/* Próxima decisão + Market Timing */
+#actions .nci-actions.ac-v3 > article:has(#actionFocus){
+  grid-column:1 !important;
+  width:100% !important;
+  height:auto !important;
+  min-height:0 !important;
+}
+
+/* Ritual do próximo aporte */
+#actions .nci-actions.ac-v3 > article:has(#actionFlow){
+  grid-column:2 !important;
+  width:100% !important;
+  height:auto !important;
+  min-height:0 !important;
+}
+
+/* Controles da Policy */
+#actions .nci-actions.ac-v3 > article:has(#actionControls){
+  grid-column:1 / -1 !important;
+  width:100% !important;
+  height:auto !important;
+  min-height:0 !important;
+}
+
+/* Remove alongamentos artificiais */
+#actions .nci-actions.ac-v3 > article{
+  align-self:start !important;
+  overflow:visible !important;
+}
+
+/* Painéis inferiores mais confortáveis */
+#actions .nci-actions.ac-v3 > article:has(#actionFocus),
+#actions .nci-actions.ac-v3 > article:has(#actionFlow),
+#actions .nci-actions.ac-v3 > article:has(#actionControls){
+  padding:18px !important;
+}
+
+/* Policy em faixa horizontal mais equilibrada */
+#actions #actionControls{
+  display:grid !important;
+  grid-template-columns:repeat(3,minmax(0,1fr)) !important;
+  gap:10px !important;
+}
+
+/* Responsividade */
+@media (max-width:1100px){
+  #actions .nci-actions.ac-v3{
+    grid-template-columns:1fr !important;
+  }
+
+  #actions .nci-actions.ac-v3 > article{
+    grid-column:1 !important;
+  }
+
+  #actions #actionControls{
+    grid-template-columns:repeat(2,minmax(0,1fr)) !important;
+  }
+}
+
+@media (max-width:720px){
+  #actions #actionControls{
+    grid-template-columns:1fr !important;
+  }
+}
+</style>
+
+</head><body><header class="head"><div class="brand">NORTH CAPITAL INTELLIGENCE<span>International Wealth Intelligence</span></div><div class="rtitle"><h1>${title}</h1><p>${subtitle}</p></div></header><div class="kpis"><div class="kpi"><small>Valor atual</small><b>${money(totalValue)}</b></div><div class="kpi"><small>Capital investido</small><b>${money(totalInvested)}</b></div><div class="kpi"><small>Resultado</small><b class="${d.result>=0?'pos':'neg'}">${d.result>=0?'+':''}${money(d.result).replace('$','$')}</b><small>${d.resultPct>=0?'+':''}${pct(d.resultPct)}</small></div><div class="kpi"><small>Ativos</small><b>${PORT.length}</b></div><div class="kpi"><small>Capital Pool</small><b>${money(DB.capitalPool?.inTransit||0)}</b></div></div>${compactTable}${detailedBlocks}<footer class="footer"><span>North Capital Intelligence © 2026 · Relatório gerado a partir do snapshot interno da plataforma.</span><span>Decisão humana · sem execução automática</span></footer><script>window.onload=()=>setTimeout(()=>window.print(),250)<\/script>
 
 
 
@@ -4917,4 +5259,1093 @@ if(document.readyState==='loading'){
   }
 })();
 </script>
+
+
+<script id="NCI_ACTION_PLAN_OPERATIONAL_OVERLAY_V1">
+(() => {
+  const ENDPOINT = '/api/v2/entry-monitor';
+  const ROOT_ID = 'actions';
+  const HOST_ID = 'actionFocus';
+  const OVERLAY_ID = 'nci-action-plan-operational-overlay';
+
+  const META = {
+    PULLBACK: {
+      label: 'Timing favorável',
+      text: 'Correção relevante de preço. Revisar Policy, valuation, concentração e gates antes de qualquer aporte.'
+    },
+    EXTENDED: {
+      label: 'Aguardar entrada',
+      text: 'Preço estendido. Evitar perseguir o ativo e aguardar melhor relação risco/entrada.'
+    },
+    SPIKE: {
+      label: 'Não perseguir preço',
+      text: 'Aceleração anormal de curto prazo. Preservar disciplina de entrada.'
+    },
+    THESIS_EVENT: {
+      label: 'Revisão prioritária',
+      text: 'Evento material exige revisão de tese antes de qualquer decisão.'
+    }
+  };
+
+  const esc = value => String(value ?? '')
+    .replaceAll('&', '&amp;')
+    .replaceAll('<', '&lt;')
+    .replaceAll('>', '&gt;')
+    .replaceAll('"', '&quot;')
+    .replaceAll("'", '&#039;');
+
+  function buildOverlay(payload) {
+    const states = Array.isArray(payload?.states) ? payload.states : [];
+
+    const relevant = states.filter(item =>
+      item &&
+      item.ticker &&
+      item.priceActionState &&
+      item.priceActionState !== 'NORMAL' &&
+      META[item.priceActionState]
+    );
+
+    if (!relevant.length) return '';
+
+    const priority = ['THESIS_EVENT', 'SPIKE', 'PULLBACK', 'EXTENDED'];
+
+    const groups = relevant.reduce((acc, item) => {
+      (acc[item.priceActionState] ||= []).push(item.ticker);
+      return acc;
+    }, {});
+
+    const rows = priority
+      .filter(state => groups[state]?.length)
+      .map(state => {
+        const meta = META[state];
+        const tickers = groups[state].map(esc).join(', ');
+
+        return `
+          <div style="
+            padding:9px 10px;
+            border:1px solid #27465a;
+            border-radius:8px;
+            background:#091a27;
+          ">
+            <div style="font-size:11px;font-weight:700;color:#e8f1f7">
+              ${esc(meta.label)} · ${tickers}
+            </div>
+            <div style="font-size:10px;color:#9fb2bf;margin-top:3px;line-height:1.4">
+              ${esc(meta.text)}
+            </div>
+          </div>
+        `;
+      })
+      .join('');
+
+    return `
+      <div id="${OVERLAY_ID}" style="
+        margin-top:12px;
+        padding-top:12px;
+        border-top:1px solid #203847;
+      ">
+        <div style="
+          display:flex;
+          justify-content:space-between;
+          gap:10px;
+          align-items:center;
+          margin-bottom:8px;
+        ">
+          <div>
+            <div style="
+              font-size:9px;
+              color:#7f95a3;
+              text-transform:uppercase;
+              letter-spacing:.08em;
+            ">
+              Market Timing Overlay
+            </div>
+            <div style="
+              font-size:12px;
+              font-weight:700;
+              color:#dfeaf0;
+              margin-top:2px;
+            ">
+              Contexto operacional de entrada · ${relevant.length} sinal${relevant.length === 1 ? '' : 'is'}
+            </div>
+          </div>
+          <div style="
+            font-size:9px;
+            color:#77a0b8;
+            border:1px solid #28495c;
+            padding:3px 7px;
+            border-radius:999px;
+            white-space:nowrap;
+          ">
+            PRICE ONLY
+          </div>
+        </div>
+
+        <div style="display:grid;gap:6px">
+          ${rows}
+        </div>
+
+        <div style="
+          margin-top:8px;
+          font-size:9px;
+          color:#718895;
+          line-height:1.4;
+        ">
+          Camada informativa. Não altera prioridade, não supera Policy/gates
+          e não autoriza aporte. Decisão humana permanece obrigatória.
+        </div>
+      </div>
+    `;
+  }
+
+  async function refreshActionPlanOperationalOverlay() {
+    const root = document.getElementById(ROOT_ID);
+    const host = document.getElementById(HOST_ID);
+
+    if (!root || !host || !root.classList.contains('active')) return;
+
+    try {
+      const response = await fetch(ENDPOINT, { cache: 'no-store' });
+
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}`);
+      }
+
+      const payload = await response.json();
+
+      if (
+        payload?.ok !== true ||
+        payload?.mode !== 'READ_ONLY' ||
+        payload?.writeOperationsEnabled !== false ||
+        payload?.signalScope !== 'PRICE_ONLY' ||
+        payload?.decisionAuthorization !== false
+      ) {
+        throw new Error('Invalid Entry Monitor contract');
+      }
+
+      document.getElementById(OVERLAY_ID)?.remove();
+
+      const html = buildOverlay(payload);
+
+      if (html) {
+        host.insertAdjacentHTML('beforeend', html);
+      }
+    } catch (error) {
+      console.warn('[NCI Action Plan Operational Overlay]', error);
+    }
+  }
+
+  window.NCI_refreshActionPlanOperationalOverlay =
+    refreshActionPlanOperationalOverlay;
+
+  const observer = new MutationObserver(() => {
+    const root = document.getElementById(ROOT_ID);
+    if (root?.classList.contains('active')) {
+      setTimeout(refreshActionPlanOperationalOverlay, 50);
+    }
+  });
+
+  const boot = () => {
+    const root = document.getElementById(ROOT_ID);
+    if (!root) return;
+
+    observer.observe(root, {
+      attributes: true,
+      attributeFilter: ['class']
+    });
+
+    if (root.classList.contains('active')) {
+      refreshActionPlanOperationalOverlay();
+    }
+  };
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', boot, { once: true });
+  } else {
+    boot();
+  }
+})();
+</script>
+
+
+
+<style id="nci-action-plan-layout-final">
+
+/* NCI Plano de Ações — layout final */
+
+#actions .nci-actions.ac-v3{
+  display:grid !important;
+  grid-template-columns:minmax(0,1fr) minmax(0,1fr) !important;
+  gap:14px !important;
+  align-items:start !important;
+}
+
+/* Ciclo de Aporte */
+#actions .nci-actions.ac-v3 > .ac-command{
+  grid-column:1 / -1 !important;
+  grid-row:auto !important;
+}
+
+/* Próximas ações — largura total */
+#actions .nci-actions.ac-v3 > .ac-queue{
+  grid-column:1 / -1 !important;
+  grid-row:auto !important;
+  width:100% !important;
+  height:auto !important;
+  min-height:0 !important;
+}
+
+/* Decisão + Market Timing */
+#actions .nci-actions.ac-v3 > .ac-focus{
+  grid-column:1 !important;
+  grid-row:auto !important;
+  width:100% !important;
+  height:auto !important;
+  min-height:0 !important;
+  align-self:start !important;
+}
+
+/* Ritual */
+#actions .nci-actions.ac-v3 > .ac-flow{
+  grid-column:2 !important;
+  grid-row:auto !important;
+  width:100% !important;
+  height:auto !important;
+  min-height:0 !important;
+  align-self:start !important;
+}
+
+/* Policy — largura total */
+#actions .nci-actions.ac-v3 > .ac-control{
+  grid-column:1 / -1 !important;
+  grid-row:auto !important;
+  width:100% !important;
+  height:auto !important;
+  min-height:0 !important;
+  align-self:start !important;
+}
+
+/* Policy em três colunas */
+#actions #actionControls{
+  display:grid !important;
+  grid-template-columns:repeat(3,minmax(0,1fr)) !important;
+  gap:10px !important;
+}
+
+/* Responsive real */
+@media (max-width:900px){
+  #actions .nci-actions.ac-v3{
+    grid-template-columns:1fr !important;
+  }
+
+  #actions .nci-actions.ac-v3 > .ac-command,
+  #actions .nci-actions.ac-v3 > .ac-queue,
+  #actions .nci-actions.ac-v3 > .ac-focus,
+  #actions .nci-actions.ac-v3 > .ac-flow,
+  #actions .nci-actions.ac-v3 > .ac-control{
+    grid-column:1 !important;
+  }
+
+  #actions #actionControls{
+    grid-template-columns:repeat(2,minmax(0,1fr)) !important;
+  }
+}
+
+</style>
+
+
+
+<style id="nci-action-plan-polish-final">
+
+/* =========================================================
+   NCI · PLANO DE AÇÕES · POLISH FINAL
+   Tipografia, proporções e overflow.
+   Nenhuma alteração de lógica.
+   ========================================================= */
+
+/* ---------- PRÓXIMAS AÇÕES ---------- */
+
+#actions #actionList table{
+  width:100% !important;
+  table-layout:fixed !important;
+}
+
+#actions #actionList th{
+  font-size:11.5px !important;
+  line-height:1.35 !important;
+  padding:10px 8px !important;
+}
+
+#actions #actionList td{
+  font-size:11.5px !important;
+  line-height:1.45 !important;
+  padding:11px 8px !important;
+  vertical-align:middle !important;
+}
+
+/* proporção das 6 colunas */
+#actions #actionList th:nth-child(1),
+#actions #actionList td:nth-child(1){
+  width:4% !important;
+}
+
+#actions #actionList th:nth-child(2),
+#actions #actionList td:nth-child(2){
+  width:8% !important;
+}
+
+#actions #actionList th:nth-child(3),
+#actions #actionList td:nth-child(3){
+  width:19% !important;
+}
+
+#actions #actionList th:nth-child(4),
+#actions #actionList td:nth-child(4){
+  width:41% !important;
+}
+
+#actions #actionList th:nth-child(5),
+#actions #actionList td:nth-child(5){
+  width:10% !important;
+}
+
+#actions #actionList th:nth-child(6),
+#actions #actionList td:nth-child(6){
+  width:18% !important;
+}
+
+/* Ação principal */
+#actions #actionList td:nth-child(3){
+  font-size:12px !important;
+  font-weight:600 !important;
+}
+
+/* Leitura operacional */
+#actions #actionList td:nth-child(4){
+  font-size:12px !important;
+  line-height:1.5 !important;
+}
+
+/* Botões da coluna IR PARA */
+#actions #actionList td:nth-child(6) button,
+#actions #actionList td:nth-child(6) a{
+  width:100% !important;
+  min-width:0 !important;
+  min-height:40px !important;
+  padding:8px 10px !important;
+  font-size:11px !important;
+  line-height:1.3 !important;
+  white-space:normal !important;
+  overflow-wrap:anywhere !important;
+  overflow-wrap:break-word !important;
+  word-break:normal !important;
+  text-align:center !important;
+  display:flex !important;
+  align-items:center !important;
+  justify-content:center !important;
+  box-sizing:border-box !important;
+}
+
+/* ---------- PRÓXIMA DECISÃO / MARKET TIMING ---------- */
+
+#actions #actionFocus p{
+  font-size:11.5px !important;
+  line-height:1.5 !important;
+}
+
+#actions #actionFocus small{
+  font-size:10.5px !important;
+  line-height:1.45 !important;
+}
+
+#actions #nci-action-plan-operational-overlay{
+  font-size:11.5px !important;
+}
+
+#actions #nci-action-plan-operational-overlay > div:last-child{
+  font-size:10.5px !important;
+  line-height:1.45 !important;
+}
+
+/* ---------- RITUAL DO PRÓXIMO APORTE ---------- */
+
+#actions #actionFlow{
+  gap:10px !important;
+}
+
+#actions #actionFlow > div{
+  padding:12px !important;
+  min-height:74px !important;
+}
+
+#actions #actionFlow strong,
+#actions #actionFlow b{
+  font-size:12px !important;
+  line-height:1.35 !important;
+}
+
+#actions #actionFlow p,
+#actions #actionFlow small,
+#actions #actionFlow span{
+  font-size:10.5px !important;
+  line-height:1.45 !important;
+}
+
+/* ---------- CONTROLES DA POLICY ---------- */
+
+#actions #actionControls{
+  gap:12px !important;
+}
+
+#actions #actionControls > div{
+  padding:13px !important;
+  min-height:78px !important;
+}
+
+#actions #actionControls strong,
+#actions #actionControls b{
+  font-size:11.5px !important;
+  line-height:1.35 !important;
+}
+
+#actions #actionControls p,
+#actions #actionControls small,
+#actions #actionControls span{
+  font-size:10.5px !important;
+  line-height:1.45 !important;
+}
+
+/* Labels minúsculos */
+#actions #actionFlow [class*="label"],
+#actions #actionControls [class*="label"],
+#actions #actionFlow [class*="meta"],
+#actions #actionControls [class*="meta"]{
+  font-size:9.5px !important;
+}
+
+/* Notebook */
+@media (max-width:1200px){
+  #actions #actionList th,
+  #actions #actionList td{
+    font-size:11px !important;
+  }
+
+  #actions #actionList td:nth-child(6) button,
+  #actions #actionList td:nth-child(6) a{
+    font-size:10.5px !important;
+  }
+}
+
+</style>
+
+
+
+<style id="nci-action-table-final-tuning">
+
+#actions #actionList th:nth-child(4),
+#actions #actionList td:nth-child(4){
+  width:39% !important;
+}
+
+#actions #actionList th:nth-child(6),
+#actions #actionList td:nth-child(6){
+  width:20% !important;
+}
+
+#actions #actionList td:nth-child(4),
+#actions #actionList td:nth-child(4) *{
+  font-size:12px !important;
+  line-height:1.5 !important;
+}
+
+#actions #actionList td:nth-child(6){
+  padding-left:10px !important;
+  padding-right:10px !important;
+  overflow:visible !important;
+}
+
+#actions #actionList td:nth-child(6) button,
+#actions #actionList td:nth-child(6) a{
+  width:100% !important;
+  max-width:100% !important;
+  min-width:0 !important;
+  box-sizing:border-box !important;
+  white-space:normal !important;
+  overflow:visible !important;
+  overflow-wrap:break-word !important;
+  word-break:normal !important;
+  font-size:11px !important;
+  line-height:1.3 !important;
+  padding:8px 8px !important;
+}
+
+#actions #actionList td:nth-child(6) button *,
+#actions #actionList td:nth-child(6) a *{
+  font-size:11px !important;
+  line-height:1.3 !important;
+  white-space:normal !important;
+}
+
+</style>
+
+
+
+<style id="nci-action-plan-hard-fix-v1">
+
+/* =========================================================
+   NCI ACTION PLAN · HARD FIX v1
+   Corrige tabela + Ritual sem alterar lógica financeira.
+   ========================================================= */
+
+/* ---------- TABELA ---------- */
+
+#actions #actionList table{
+  width:100% !important;
+  table-layout:fixed !important;
+}
+
+#actions #actionList th:nth-child(4),
+#actions #actionList td:nth-child(4){
+  width:38% !important;
+}
+
+#actions #actionList th:nth-child(5),
+#actions #actionList td:nth-child(5){
+  width:9% !important;
+}
+
+#actions #actionList th:nth-child(6),
+#actions #actionList td:nth-child(6){
+  width:22% !important;
+}
+
+/* leitura operacional */
+#actions #actionList td:nth-child(4),
+#actions #actionList td:nth-child(4) *{
+  font-size:12px !important;
+  line-height:1.5 !important;
+  white-space:normal !important;
+  overflow-wrap:break-word !important;
+}
+
+/* estado */
+#actions #actionList td:nth-child(5){
+  text-align:center !important;
+}
+
+/* IR PARA */
+#actions #actionList td:nth-child(6){
+  padding:8px 12px !important;
+  overflow:visible !important;
+}
+
+#actions #actionList td:nth-child(6) > *,
+#actions #actionList td:nth-child(6) button,
+#actions #actionList td:nth-child(6) a{
+  width:100% !important;
+  min-width:0 !important;
+  max-width:none !important;
+  min-height:44px !important;
+  box-sizing:border-box !important;
+
+  display:flex !important;
+  align-items:center !important;
+  justify-content:center !important;
+
+  padding:8px 10px !important;
+
+  white-space:normal !important;
+  overflow:visible !important;
+  overflow-wrap:break-word !important;
+  word-break:normal !important;
+
+  text-align:center !important;
+  font-size:11.5px !important;
+  line-height:1.25 !important;
+}
+
+
+/* ---------- RITUAL ---------- */
+
+#actions #actionFlow.ac-flow-grid{
+  display:grid !important;
+  grid-template-columns:repeat(2,minmax(0,1fr)) !important;
+  gap:10px !important;
+}
+
+#actions #actionFlow.ac-flow-grid > *{
+  position:relative !important;
+  min-width:0 !important;
+  min-height:86px !important;
+  padding:13px 12px 12px 42px !important;
+  box-sizing:border-box !important;
+  overflow:hidden !important;
+}
+
+/* número identificado pelo runtime abaixo */
+#actions #actionFlow .nci-step-number-fixed{
+  position:absolute !important;
+  left:12px !important;
+  top:13px !important;
+
+  width:18px !important;
+  height:18px !important;
+  min-width:18px !important;
+
+  margin:0 !important;
+  padding:0 !important;
+
+  display:flex !important;
+  align-items:center !important;
+  justify-content:center !important;
+
+  border-radius:999px !important;
+
+  font-size:9px !important;
+  line-height:18px !important;
+  font-weight:700 !important;
+
+  z-index:2 !important;
+  pointer-events:none !important;
+}
+
+/* texto dos cards */
+#actions #actionFlow .nci-step-title-fixed{
+  display:block !important;
+  margin:0 0 5px 0 !important;
+  padding:0 !important;
+
+  font-size:12px !important;
+  line-height:1.3 !important;
+  font-weight:700 !important;
+}
+
+#actions #actionFlow .nci-step-desc-fixed{
+  display:block !important;
+  margin:0 !important;
+  padding:0 !important;
+
+  font-size:10.5px !important;
+  line-height:1.4 !important;
+  white-space:normal !important;
+  overflow-wrap:break-word !important;
+}
+
+@media (max-width:900px){
+  #actions #actionFlow.ac-flow-grid{
+    grid-template-columns:1fr !important;
+  }
+}
+
+</style>
+
+<script id="nci-action-plan-hard-fix-v1-runtime">
+(function(){
+
+  function fixActionPlan(){
+
+    /* -------- Ritual -------- */
+    const flow = document.querySelector('#actions #actionFlow');
+
+    if(flow){
+      [...flow.children].forEach(card => {
+
+        const all = [...card.querySelectorAll('*')];
+
+        /* encontra badge numérico real 1..6 */
+        const number = all.find(el =>
+          /^[1-6]$/.test((el.textContent || '').trim())
+        );
+
+        if(number){
+          number.classList.add('nci-step-number-fixed');
+        }
+
+        /* encontra primeiro texto relevante depois do número */
+        const meaningful = all.filter(el => {
+          const t = (el.textContent || '').trim();
+          if(!t) return false;
+          if(/^[1-6]$/.test(t)) return false;
+
+          /* evita containers que repetem texto dos filhos */
+          return el.children.length === 0;
+        });
+
+        if(meaningful.length){
+          meaningful[0].classList.add('nci-step-title-fixed');
+
+          meaningful.slice(1).forEach(el => {
+            el.classList.add('nci-step-desc-fixed');
+          });
+        }
+      });
+    }
+
+    /* -------- tabela -------- */
+    const table = document.querySelector('#actions #actionList table');
+
+    if(table){
+      [...table.querySelectorAll('tbody tr')].forEach(row => {
+        const cells = row.children;
+
+        if(cells[3]){
+          cells[3].style.fontSize = '12px';
+          cells[3].style.lineHeight = '1.5';
+        }
+
+        if(cells[5]){
+          cells[5].style.overflow = 'visible';
+
+          const control =
+            cells[5].querySelector('button,a') ||
+            cells[5].firstElementChild;
+
+          if(control){
+            control.style.width = '100%';
+            control.style.maxWidth = 'none';
+            control.style.whiteSpace = 'normal';
+            control.style.overflow = 'visible';
+          }
+        }
+      });
+    }
+  }
+
+  fixActionPlan();
+
+  document.addEventListener('DOMContentLoaded', fixActionPlan);
+
+  const root = document.querySelector('#actions');
+
+  if(root){
+    const observer = new MutationObserver(() => fixActionPlan());
+
+    observer.observe(root,{
+      childList:true,
+      subtree:true
+    });
+  }
+
+})();
+</script>
+
+
+
+<style id="nci-action-table-final-hard-tuning-v2">
+
+/* =========================================================
+   NCI · PRÓXIMAS AÇÕES · FINAL HARD TUNING v2
+   ========================================================= */
+
+#actions #actionList table{
+  width:100% !important;
+  table-layout:fixed !important;
+}
+
+/* redistribuição definitiva */
+#actions #actionList th:nth-child(1),
+#actions #actionList td:nth-child(1){
+  width:4% !important;
+}
+
+#actions #actionList th:nth-child(2),
+#actions #actionList td:nth-child(2){
+  width:10% !important;
+}
+
+#actions #actionList th:nth-child(3),
+#actions #actionList td:nth-child(3){
+  width:19% !important;
+}
+
+#actions #actionList th:nth-child(4),
+#actions #actionList td:nth-child(4){
+  width:34% !important;
+}
+
+#actions #actionList th:nth-child(5),
+#actions #actionList td:nth-child(5){
+  width:9% !important;
+}
+
+#actions #actionList th:nth-child(6),
+#actions #actionList td:nth-child(6){
+  width:24% !important;
+}
+
+/* LEITURA OPERACIONAL */
+#actions #actionList td:nth-child(4),
+#actions #actionList td:nth-child(4) *{
+  font-size:13px !important;
+  line-height:1.5 !important;
+  white-space:normal !important;
+  overflow-wrap:break-word !important;
+  word-break:normal !important;
+}
+
+/* IR PARA */
+#actions #actionList td:nth-child(6){
+  padding:8px 12px !important;
+  overflow:hidden !important;
+  box-sizing:border-box !important;
+}
+
+#actions #actionList td:nth-child(6) button,
+#actions #actionList td:nth-child(6) a,
+#actions #actionList td:nth-child(6) > *{
+  width:100% !important;
+  max-width:100% !important;
+  min-width:0 !important;
+  min-height:46px !important;
+
+  padding:7px 8px !important;
+  margin:0 !important;
+
+  box-sizing:border-box !important;
+
+  display:flex !important;
+  align-items:center !important;
+  justify-content:center !important;
+
+  text-align:center !important;
+
+  font-size:11px !important;
+  line-height:1.25 !important;
+
+  white-space:normal !important;
+  overflow:hidden !important;
+  overflow-wrap:anywhere !important;
+  word-break:normal !important;
+}
+
+#actions #actionList td:nth-child(6) button *,
+#actions #actionList td:nth-child(6) a *{
+  font-size:11px !important;
+  line-height:1.25 !important;
+  white-space:normal !important;
+  overflow-wrap:anywhere !important;
+  max-width:100% !important;
+}
+
+/* cabeçalhos */
+#actions #actionList th{
+  font-size:12px !important;
+  line-height:1.3 !important;
+}
+
+</style>
+
+<script id="nci-action-table-final-hard-tuning-v2-runtime">
+(function(){
+
+  function hardFixActionTable(){
+    const table = document.querySelector('#actions #actionList table');
+    if(!table) return;
+
+    [...table.querySelectorAll('tbody tr')].forEach(row => {
+      const cells = row.children;
+
+      /* leitura operacional */
+      if(cells[3]){
+        cells[3].style.setProperty('font-size','13px','important');
+        cells[3].style.setProperty('line-height','1.5','important');
+
+        cells[3].querySelectorAll('*').forEach(el => {
+          el.style.setProperty('font-size','13px','important');
+          el.style.setProperty('line-height','1.5','important');
+        });
+      }
+
+      /* botão IR PARA */
+      if(cells[5]){
+        cells[5].style.setProperty('width','24%','important');
+        cells[5].style.setProperty('overflow','hidden','important');
+
+        const control =
+          cells[5].querySelector('button,a') ||
+          cells[5].firstElementChild;
+
+        if(control){
+          control.style.setProperty('width','100%','important');
+          control.style.setProperty('max-width','100%','important');
+          control.style.setProperty('min-width','0','important');
+          control.style.setProperty('box-sizing','border-box','important');
+          control.style.setProperty('white-space','normal','important');
+          control.style.setProperty('overflow','hidden','important');
+          control.style.setProperty('overflow-wrap','anywhere','important');
+          control.style.setProperty('font-size','11px','important');
+          control.style.setProperty('line-height','1.25','important');
+
+          control.querySelectorAll('*').forEach(el => {
+            el.style.setProperty('font-size','11px','important');
+            el.style.setProperty('white-space','normal','important');
+            el.style.setProperty('overflow-wrap','anywhere','important');
+          });
+        }
+      }
+    });
+  }
+
+  hardFixActionTable();
+  document.addEventListener('DOMContentLoaded', hardFixActionTable);
+
+  const root = document.querySelector('#actions');
+  if(root){
+    new MutationObserver(hardFixActionTable).observe(root,{
+      childList:true,
+      subtree:true
+    });
+  }
+
+})();
+</script>
+
+
+
+<style id="nci-action-row-definitive-v1">
+
+/* =========================================================
+   NCI · PRÓXIMAS AÇÕES
+   Correção definitiva sobre a estrutura REAL do renderer
+   ========================================================= */
+
+/* Cabeçalho e linhas usam exatamente a mesma grade */
+#actions #actionList > .ac-row.ac-head,
+#actions #actionList > .ac-row.ac-v3-row{
+  display:grid !important;
+
+  grid-template-columns:
+    34px
+    76px
+    230px
+    minmax(0,1fr)
+    88px
+    174px !important;
+
+  column-gap:10px !important;
+  align-items:center !important;
+
+  width:100% !important;
+  min-width:0 !important;
+  box-sizing:border-box !important;
+}
+
+/* Nenhuma célula pode forçar a largura da linha */
+#actions #actionList > .ac-row.ac-head > *,
+#actions #actionList > .ac-row.ac-v3-row > *{
+  min-width:0 !important;
+  max-width:100% !important;
+  box-sizing:border-box !important;
+}
+
+/* ---------------------------------------------------------
+   LEITURA OPERACIONAL — 4ª coluna
+   --------------------------------------------------------- */
+
+#actions #actionList > .ac-row.ac-v3-row > :nth-child(4),
+#actions #actionList > .ac-row.ac-v3-row > :nth-child(4) *,
+#actions #actionList .ac-v3-row .ac-secondary{
+  font-size:12.5px !important;
+  line-height:1.5 !important;
+
+  white-space:normal !important;
+  overflow-wrap:break-word !important;
+  word-break:normal !important;
+
+  opacity:1 !important;
+}
+
+/* ---------------------------------------------------------
+   ESTADO — 5ª coluna
+   --------------------------------------------------------- */
+
+#actions #actionList > .ac-row.ac-v3-row > :nth-child(5){
+  display:flex !important;
+  justify-content:center !important;
+  align-items:center !important;
+
+  min-width:0 !important;
+  text-align:center !important;
+}
+
+/* ---------------------------------------------------------
+   IR PARA — 6ª coluna
+   --------------------------------------------------------- */
+
+#actions #actionList > .ac-row.ac-v3-row > :nth-child(6){
+  min-width:0 !important;
+  width:100% !important;
+
+  padding:6px 0 !important;
+  overflow:hidden !important;
+
+  box-sizing:border-box !important;
+}
+
+/* Botão real */
+#actions #actionList > .ac-row.ac-v3-row > :nth-child(6) button,
+#actions #actionList > .ac-row.ac-v3-row > :nth-child(6) a{
+  display:flex !important;
+  align-items:center !important;
+  justify-content:center !important;
+
+  width:100% !important;
+  max-width:100% !important;
+  min-width:0 !important;
+  min-height:44px !important;
+
+  margin:0 !important;
+  padding:8px 10px !important;
+
+  box-sizing:border-box !important;
+
+  font-size:11.5px !important;
+  line-height:1.25 !important;
+  text-align:center !important;
+
+  white-space:normal !important;
+  overflow-wrap:break-word !important;
+  word-break:normal !important;
+  overflow:hidden !important;
+}
+
+/* Qualquer span interno do botão obedece à caixa */
+#actions #actionList > .ac-row.ac-v3-row > :nth-child(6) button *,
+#actions #actionList > .ac-row.ac-v3-row > :nth-child(6) a *{
+  max-width:100% !important;
+
+  font-size:11.5px !important;
+  line-height:1.25 !important;
+
+  white-space:normal !important;
+  overflow-wrap:break-word !important;
+  word-break:normal !important;
+}
+
+/* Cabeçalho */
+#actions #actionList > .ac-row.ac-head > *{
+  font-size:12px !important;
+  line-height:1.3 !important;
+}
+
+/* Nome da ação */
+#actions #actionList > .ac-row.ac-v3-row > :nth-child(3){
+  font-size:13px !important;
+  line-height:1.35 !important;
+}
+
+/* Evita compressão em telas menores sem destruir a grade */
+@media (max-width:1150px){
+  #actions #actionList{
+    overflow-x:auto !important;
+  }
+
+  #actions #actionList > .ac-row.ac-head,
+  #actions #actionList > .ac-row.ac-v3-row{
+    min-width:940px !important;
+  }
+}
+
+</style>
+
 </body></html>
