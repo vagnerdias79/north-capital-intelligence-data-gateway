@@ -6464,4 +6464,44 @@ if(document.readyState==='loading'){
 
 </style>
 
+
+
+<script id="nci-entry-bands-order-v2">
+(function(){
+
+  function fixEntryBandsOrder(){
+
+    const bands = document.getElementById('nci-entry-bands-lly-v1');
+    if(!bands) return;
+
+    const panels = [...document.querySelectorAll('#radar .or-panel')];
+
+    const gates = panels.find(p => {
+      const h = p.querySelector('h2');
+      return h && h.textContent.trim() === 'Gates para promoção';
+    });
+
+    if(!gates || !gates.parentElement) return;
+
+    const parent = gates.parentElement;
+
+    if(bands.parentElement !== parent || bands.nextElementSibling !== gates){
+      parent.insertBefore(bands, gates);
+    }
+  }
+
+  fixEntryBandsOrder();
+
+  document.addEventListener('DOMContentLoaded', fixEntryBandsOrder);
+
+  let attempts = 0;
+  const timer = setInterval(() => {
+    fixEntryBandsOrder();
+    attempts++;
+    if(attempts >= 20) clearInterval(timer);
+  }, 250);
+
+})();
+</script>
+
 </body></html>
