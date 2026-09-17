@@ -6573,4 +6573,50 @@ if(document.readyState==='loading'){
 })();
 </script>
 
+
+
+<script id="nci-current-date-runtime-v2">
+(function(){
+
+  function currentDateBR(){
+    return new Intl.DateTimeFormat('pt-BR',{
+      day:'2-digit',
+      month:'2-digit',
+      year:'numeric'
+    }).format(new Date());
+  }
+
+  function replaceSnapshotBadge(){
+
+    const targetText = /^Snapshot\s+\d{2}\/\d{2}\/\d{4}$/i;
+    const newText = 'Data ' + currentDateBR();
+
+    document.querySelectorAll('body *').forEach(el => {
+
+      if(el.children.length) return;
+
+      const txt = (el.textContent || '').trim();
+
+      if(targetText.test(txt)){
+        el.textContent = newText;
+        el.setAttribute('data-nci-current-date','true');
+      }
+    });
+  }
+
+  replaceSnapshotBadge();
+
+  document.addEventListener('DOMContentLoaded', replaceSnapshotBadge);
+  window.addEventListener('load', replaceSnapshotBadge);
+
+  const observer = new MutationObserver(replaceSnapshotBadge);
+
+  observer.observe(document.documentElement,{
+    childList:true,
+    subtree:true
+  });
+
+})();
+</script>
+
 </body></html>
