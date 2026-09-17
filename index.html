@@ -1216,6 +1216,35 @@ html,body{max-width:100%;overflow-x:hidden}.app,.main,.nci-dash{min-width:0;max-
 }
 </style>
 
+
+<style id="nci-visual-boot-guard-v1">
+html:not(.nci-ui-ready) body{
+  visibility:hidden !important;
+}
+html.nci-ui-ready body{
+  visibility:visible !important;
+}
+</style>
+
+<script id="nci-visual-boot-guard-v1-runtime">
+(function(){
+  function revealNCI(){
+    document.documentElement.classList.add('nci-ui-ready');
+  }
+
+  window.addEventListener('load', function(){
+    requestAnimationFrame(function(){
+      requestAnimationFrame(function(){
+        setTimeout(revealNCI, 80);
+      });
+    });
+  });
+
+  /* fallback de segurança */
+  setTimeout(revealNCI, 2500);
+})();
+</script>
+
 </head>
 <body>
 <div class="app">
@@ -6388,152 +6417,160 @@ if(document.readyState==='loading'){
 
 
 
-<style id="nci-entry-bands-placement-v1">
-/* Faixa de Entrada deve viver na coluna da Ficha decisória */
-#nci-entry-bands-lly-v1{
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<style id="nci-radar-structural-stabilization-v1">
+
+/* Faixa de Entrada dentro da Ficha: fluxo normal, sem grid forçado */
+#radar .or-fact #nci-entry-bands-lly-v1{
+  position:static !important;
   width:100% !important;
+  max-width:100% !important;
+  min-width:0 !important;
+
+  margin:14px 0 12px 0 !important;
+  padding:14px !important;
+
   box-sizing:border-box !important;
-  margin:0 0 10px 0 !important;
+  overflow:visible !important;
 }
 
-/* Na coluna estreita, os três níveis ficam empilhados */
-#nci-entry-bands-lly-v1 > div[style*="grid-template-columns"]{
+/* níveis empilhados na coluna decisória */
+#radar .or-fact #nci-entry-bands-lly-v1 > div[style*="grid-template-columns"]{
   grid-template-columns:1fr !important;
   gap:8px !important;
 }
 
-#nci-entry-bands-lly-v1 b{
-  font-size:15px !important;
+/* elimina qualquer herança de posicionamento anterior */
+#radar #nci-entry-bands-lly-v1{
+  grid-column:auto !important;
+  grid-row:auto !important;
+  align-self:auto !important;
 }
+
+/* evita estouro de texto */
+#radar #nci-entry-bands-lly-v1,
+#radar #nci-entry-bands-lly-v1 *{
+  max-width:100% !important;
+  box-sizing:border-box !important;
+}
+
+#radar #nci-entry-bands-lly-v1 p,
+#radar #nci-entry-bands-lly-v1 div{
+  overflow-wrap:break-word !important;
+}
+
 </style>
 
-<script id="nci-entry-bands-placement-v1-runtime">
+<script id="nci-radar-structural-stabilization-v1">
 (function(){
 
-  function placeEntryBands(){
-    const bands = document.getElementById('nci-entry-bands-lly-v1');
-    const gates = document.querySelector('#radar .or-gates, section#radar .or-gates, .or-gates');
+  function updateCurrentDate(){
+    const el = document.getElementById('nci-current-date-pill');
+    if(!el) return;
 
-    if(!bands || !gates || !gates.parentElement) return;
+    const now = new Date();
 
-    const parent = gates.parentElement;
+    const value = new Intl.DateTimeFormat('pt-BR',{
+      day:'2-digit',
+      month:'2-digit',
+      year:'numeric'
+    }).format(now);
 
-    if(bands.parentElement !== parent || bands.nextElementSibling !== gates){
-      parent.insertBefore(bands, gates);
-    }
+    el.textContent = 'Data ' + value;
   }
 
-  placeEntryBands();
-  document.addEventListener('DOMContentLoaded', placeEntryBands);
+  function stabilizeRadar(){
 
-  const radar = document.querySelector('#radar') || document.body;
+    const radar = document.querySelector('#radar');
+    if(!radar) return;
 
-  new MutationObserver(placeEntryBands).observe(radar,{
-    childList:true,
-    subtree:true
-  });
-
-})();
-</script>
-
-
-
-<style id="nci-entry-bands-grid-column-v1">
-
-/* Faixa de Entrada pertence à coluna decisória do Radar */
-#radar #nci-entry-bands-lly-v1{
-  grid-column:2 !important;
-  width:100% !important;
-  min-width:0 !important;
-  align-self:start !important;
-  box-sizing:border-box !important;
-  margin:0 0 10px 0 !important;
-}
-
-/* Dentro da coluna direita, níveis empilhados */
-#radar #nci-entry-bands-lly-v1 > div[style*="grid-template-columns"]{
-  grid-template-columns:1fr !important;
-  gap:8px !important;
-}
-
-/* Mantém Gates e Sugestões na mesma coluna decisória */
-#radar .or-gates,
-#radar .or-suggestions{
-  grid-column:2 !important;
-}
-
-</style>
-
-
-
-<script id="nci-entry-bands-order-v2">
-(function(){
-
-  function fixEntryBandsOrder(){
-
+    const fact = radar.querySelector('.or-fact');
     const bands = document.getElementById('nci-entry-bands-lly-v1');
-    if(!bands) return;
 
-    const panels = [...document.querySelectorAll('#radar .or-panel')];
+    if(!fact || !bands) return;
 
-    const gates = panels.find(p => {
-      const h = p.querySelector('h2');
-      return h && h.textContent.trim() === 'Gates para promoção';
+    /*
+      Faixa deixa de ser painel do grid externo.
+      Ela passa a fazer parte da própria Ficha decisória.
+    */
+    bands.classList.remove('or-panel');
+
+    /*
+      Procura "Radar original NCI" dentro da ficha para usar
+      como âncora final da área decisória.
+    */
+    let anchor = null;
+
+    [...fact.querySelectorAll('*')].some(el => {
+      if((el.textContent || '').trim() === 'Radar original NCI'){
+        anchor = el;
+        return true;
+      }
+      return false;
     });
 
-    if(!gates || !gates.parentElement) return;
+    if(anchor){
+      let direct = anchor;
+      while(direct.parentElement && direct.parentElement !== fact){
+        direct = direct.parentElement;
+      }
 
-    const parent = gates.parentElement;
+      if(direct.parentElement === fact){
+        if(bands.parentElement !== fact || bands.nextElementSibling !== direct){
+          fact.insertBefore(bands, direct);
+        }
+        return;
+      }
+    }
 
-    if(bands.parentElement !== parent || bands.nextElementSibling !== gates){
-      parent.insertBefore(bands, gates);
+    /* fallback seguro: final da ficha */
+    if(bands.parentElement !== fact){
+      fact.appendChild(bands);
     }
   }
 
-  fixEntryBandsOrder();
+  function runAll(){
+    updateCurrentDate();
+    stabilizeRadar();
+  }
 
-  document.addEventListener('DOMContentLoaded', fixEntryBandsOrder);
+  document.addEventListener('DOMContentLoaded', runAll);
+  window.addEventListener('load', runAll);
 
-  let attempts = 0;
-  const timer = setInterval(() => {
-    fixEntryBandsOrder();
-    attempts++;
-    if(attempts >= 20) clearInterval(timer);
-  }, 250);
+  runAll();
+
+  const radar = document.querySelector('#radar');
+
+  if(radar){
+    const observer = new MutationObserver(function(){
+      updateCurrentDate();
+      stabilizeRadar();
+    });
+
+    observer.observe(radar,{
+      childList:true,
+      subtree:true
+    });
+  }
 
 })();
 </script>
-
-
-
-<style id="nci-radar-right-column-order-final">
-
-/* Ordem definitiva da coluna decisória do Opportunity Radar */
-
-/* Ficha decisória */
-#radar .or-fact{
-  grid-column:2 !important;
-  grid-row:1 !important;
-}
-
-/* Faixa de Entrada */
-#radar #nci-entry-bands-lly-v1{
-  grid-column:2 !important;
-  grid-row:2 !important;
-}
-
-/* Gates */
-#radar .or-gates{
-  grid-column:2 !important;
-  grid-row:3 !important;
-}
-
-/* Sugestões */
-#radar .or-next{
-  grid-column:2 !important;
-  grid-row:4 !important;
-}
-
-</style>
 
 </body></html>
