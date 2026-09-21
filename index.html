@@ -2432,6 +2432,159 @@ function printPortfolioReport(mode='synthetic'){
 
 </style>
 
+
+
+<style id="nci-wide-host-radar-skin-v1">
+
+/* =========================================================
+   RADAR SKIN FOR GLOBAL WIDE HOST
+   ========================================================= */
+
+#nci-wide-host{
+  color:#eef6fb;
+}
+
+/* Painéis */
+#nci-wide-host .or-panel{
+  background:#061722;
+  border:1px solid #244759;
+  border-radius:12px;
+  padding:16px;
+  box-sizing:border-box;
+}
+
+/* Cabeçalhos */
+#nci-wide-host .or-heading{
+  display:flex;
+  justify-content:space-between;
+  align-items:flex-start;
+  gap:12px;
+  margin-bottom:12px;
+}
+
+#nci-wide-host .or-heading h2{
+  margin:0;
+  font-size:18px;
+  line-height:1.2;
+  color:#fff;
+}
+
+#nci-wide-host .or-heading p{
+  margin:4px 0 0;
+  font-size:11px;
+  line-height:1.45;
+  color:#a9c1cf;
+}
+
+#nci-wide-host .or-seal{
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  white-space:nowrap;
+  border:1px solid #7c5c00;
+  border-radius:999px;
+  padding:5px 9px;
+  font-size:9px;
+  line-height:1;
+  color:#ffd54a;
+  background:#211a03;
+}
+
+/* Faixa de Entrada */
+#nci-wide-host #nci-entry-bands-lly-v1{
+  background:#061722;
+  border:1px solid #244759;
+  border-radius:12px;
+}
+
+#nci-wide-host #nci-entry-bands-lly-v1
+> div[style*="grid-template-columns"]{
+  display:grid !important;
+  grid-template-columns:repeat(3,minmax(0,1fr)) !important;
+  gap:9px !important;
+}
+
+#nci-wide-host #nci-entry-bands-lly-v1
+> div[style*="grid-template-columns"] > div{
+  border:1px solid #244759 !important;
+  border-radius:8px !important;
+  min-height:86px;
+}
+
+/* Gates */
+#nci-wide-host .or-gates{
+  background:#061722;
+  border:1px solid #244759;
+  border-radius:12px;
+}
+
+#nci-wide-host .or-gates > div:not(.or-heading):not(.or-human-gate){
+  border:1px solid #244759;
+  border-radius:8px;
+  padding:10px;
+  margin-bottom:8px;
+}
+
+#nci-wide-host .or-gates select{
+  width:100%;
+  min-height:34px;
+  border:1px solid #31556a;
+  border-radius:6px;
+  background:#081d29;
+  color:#fff;
+  padding:6px 10px;
+}
+
+/* Sugestões */
+#nci-wide-host .or-suggestions{
+  background:#061722;
+  border:1px solid #244759;
+  border-radius:12px;
+}
+
+#nci-wide-host .or-suggestions > div:not(.or-heading){
+  border:1px solid #244759;
+  border-radius:8px;
+  padding:10px;
+  margin-bottom:8px;
+}
+
+/* Textos */
+#nci-wide-host .or-panel,
+#nci-wide-host .or-panel *{
+  box-sizing:border-box;
+  overflow-wrap:break-word;
+}
+
+#nci-wide-host .or-panel{
+  font-size:11px;
+  line-height:1.45;
+}
+
+/* Responsividade */
+@media(max-width:1180px){
+  #nci-wide-host .nci-radar-wide-grid{
+    grid-template-columns:1fr 1fr !important;
+  }
+
+  #nci-wide-host #nci-entry-bands-lly-v1{
+    grid-column:1 / -1;
+  }
+}
+
+@media(max-width:760px){
+  #nci-wide-host .nci-radar-wide-grid{
+    grid-template-columns:1fr !important;
+  }
+
+  #nci-wide-host #nci-entry-bands-lly-v1
+  > div[style*="grid-template-columns"]{
+    grid-template-columns:1fr !important;
+  }
+}
+
+</style>
+
 </head><body><header class="head"><div class="brand">NORTH CAPITAL INTELLIGENCE<span>International Wealth Intelligence</span></div><div class="rtitle"><h1>${title}</h1><p>${subtitle}</p></div></header><div class="kpis"><div class="kpi"><small>Valor atual</small><b>${money(totalValue)}</b></div><div class="kpi"><small>Capital investido</small><b>${money(totalInvested)}</b></div><div class="kpi"><small>Resultado</small><b class="${d.result>=0?'pos':'neg'}">${d.result>=0?'+':''}${money(d.result).replace('$','$')}</b><small>${d.resultPct>=0?'+':''}${pct(d.resultPct)}</small></div><div class="kpi"><small>Ativos</small><b>${PORT.length}</b></div><div class="kpi"><small>Capital Pool</small><b>${money(DB.capitalPool?.inTransit||0)}</b></div></div>${compactTable}${detailedBlocks}<footer class="footer"><span>North Capital Intelligence © 2026 · Relatório gerado a partir do snapshot interno da plataforma.</span><span>Decisão humana · sem execução automática</span></footer><script>window.onload=()=>setTimeout(()=>window.print(),250)<\/script>
 
 
