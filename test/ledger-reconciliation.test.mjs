@@ -51,18 +51,31 @@ test('classifies only migration-linked rows as baselines when all rows share the
   const fingerprint = 'NCI-LEDGER-AEF25E9D3A64';
   const original = row('o-1', 1, {
     ledger_fingerprint: fingerprint,
+    external_ref:'ledger-1',
     metadata: { ledgerFingerprint:fingerprint, baseline:'NCI USD 1.1.02' }
   });
   const baseline = row('b-1', 1, {
     ledger_fingerprint: fingerprint,
+    external_ref:'NCI-BASELINE:ledger-1',
     metadata: {
       ledgerFingerprint:fingerprint,
-      baseline:'NCI USD 1.1.02',
-      originalTransactionType:'BUY'
+      baseline:'NCI USD 1.1.02'
     }
   });
 
   const result = classifyLedgerRows([original, baseline], fingerprint);
   assert.deepEqual(result.originals.map(item => item.id), ['o-1']);
   assert.deepEqual(result.baselines.map(item => item.id), ['b-1']);
+});
+
+
+test('pairs duplicate natural keys by canonical external reference and ignores baseline prefix', () => {
+  const originalA = row('o-a', 1, { ticker:'BRK.B', trade_date:'2026-06-22', gross_amount:'16.88', external_ref:'ledger-8' });
+  const originalB = row('o-b', 1, { ticker:'BRK.B', trade_date:'2026-06-22', gross_amount:'19.21', external_ref:'ledger-23' });
+  const baselineB = row('b-b', 1, { ticker:'BRK.B', trade_date:'2026-06-22', gross_amount:'19.21', external_ref:'NCI-BASELINE:ledger-23' });
+  const baselineA = row('b-a', 1, { ticker:'BRK.B', trade_date:'2026-06-22', gross_amount:'16.88', external_ref:'NCI-BASELINE:ledger-8' });
+
+  const result = reconcile([originalA, originalB], [baselineB, baselineA]);
+  assert.deepEqual(result.pairs.map(pair => pair.status), ['MATCH', 'MATCH']);
+  assert.deepEqual(result.pairs.map(pair => [pair.originalId, pair.baselineId]), [['o-b', 'b-b'], ['o-a', 'b-a']]);
 });
