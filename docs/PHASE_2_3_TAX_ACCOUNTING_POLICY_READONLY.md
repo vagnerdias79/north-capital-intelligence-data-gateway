@@ -82,3 +82,41 @@ documentar claramente qualquer diferença.
 4. Comparar os resultados das duas convenções.
 5. Publicar somente em preview.
 6. Submeter relatório à decisão humana.
+
+## Inventário inicial de consumidores
+
+### API Data Layer v2
+
+`api/v2/ledger.js`:
+
+- consulta `gross_amount`, `fee_amount` e `tax_amount`;
+- devolve as transações sem executar agregação financeira;
+- declara `writeOperationsEnabled: false`;
+- portanto, atua como transporte read-only e não é, isoladamente, fonte de
+  dupla contagem.
+
+### Dashboard legado
+
+O fluxo atual de histórico no `index.html`:
+
+- cria eventos `DIVIDEND` com valor positivo;
+- cria eventos `TAX` com `value` negativo;
+- soma dividendos pelo campo legado `value`;
+- soma impostos separadamente pelo valor absoluto de `value`.
+
+Achado preliminar: o dashboard não soma simultaneamente `gross_amount` e
+`tax_amount` nesse fluxo legado. O risco de dupla contagem surgirá na
+integração entre o Data Layer v2 e o motor visual caso a normalização use os
+dois campos como saídas independentes.
+
+### Próxima prova necessária
+
+Construir uma função pura de normalização que produza um único
+`cashEffect` para cada evento `TAX` e comparar:
+
+- original: `gross_amount` negativo;
+- baseline: `tax_amount` positivo com `gross_amount = 0`;
+- legado: `value` negativo.
+
+O critério de equivalência será exatamente um débito por evento e total
+agregado de `USD -0.54`, sem persistência.
