@@ -24,7 +24,8 @@ pre{white-space:pre-wrap;word-break:break-word;background:#06111d;border:1px sol
 <button id="login" hidden>Entrar com Google</button>
 <button id="read" class="secondary" hidden>Ler portfolios</button>
 <button id="readPositions" class="secondary" hidden>Ler positions</button>
-<button id="readLedger" class="secondary" hidden>Reconciliar ledger</button>\n<button id="readTax" class="secondary" hidden>Analisar TAX</button>
+<button id="readLedger" class="secondary" hidden>Reconciliar ledger</button>
+<button id="readTax" class="secondary" hidden>Analisar TAX</button>
 <button id="logout" class="secondary" hidden>Sair</button>
 </p>
 <pre id="out"></pre>
@@ -91,6 +92,7 @@ async function init(){
       read.hidden=false;
       readPositions.hidden=false;
       readLedger.hidden=false;
+      readTax.hidden=false;
       logout.hidden=false;
     }else{
       status.innerHTML='<span class="warn">Nenhuma sessão ativa.</span>';
