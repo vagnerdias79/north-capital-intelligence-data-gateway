@@ -120,3 +120,32 @@ Construir uma função pura de normalização que produza um único
 
 O critério de equivalência será exatamente um débito por evento e total
 agregado de `USD -0.54`, sem persistência.
+
+## Prova do normalizador puro
+
+Implementação:
+
+- `lib/tax-cash-effect.js`
+- `test/tax-cash-effect.test.mjs`
+
+Resultado local em 23/09/2026:
+
+- 10 testes executados;
+- 10 testes aprovados;
+- 0 falhas;
+- original, baseline e legado normalizados para um único débito;
+- nove eventos totalizam exatamente `USD -0.54`;
+- `noDoubleCounting: true`;
+- `writeOperationsEnabled: false`;
+- valores conflitantes geram `AMBIGUOUS_TAX_REPRESENTATION`;
+- eventos sem valor geram `TAX_AMOUNT_MISSING`.
+
+### Conclusão intermediária
+
+A equivalência econômica foi provada sem escolher silenciosamente entre campos.
+Quando `gross_amount`, `tax_amount` e/ou `value` representam a mesma
+magnitude, o normalizador produz apenas um `cashEffect` negativo. Quando as
+magnitudes divergem, a operação é interrompida para revisão humana.
+
+Esta prova não altera o dashboard, a API, o banco ou a baseline. A integração
+do normalizador com qualquer consumidor permanece condicionada à homologação.
