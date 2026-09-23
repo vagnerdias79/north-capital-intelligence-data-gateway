@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { reconcile } from '../lib/ledger-reconciliation.js';
+import { classifyLedgerRows, reconcile } from '../lib/ledger-reconciliation.js';
 
 function row(id, index, overrides = {}) {
   return {
@@ -44,4 +44,28 @@ test('pairs duplicate natural keys deterministically by input order', () => {
 
   const result = reconcile([originalA, originalB], [baselineA, baselineB]);
   assert.deepEqual(result.pairs.map(pair => pair.status), ['MATCH', 'MATCH']);
+});
+
+
+test('classifies only migration-linked rows as baselines when all rows share the fingerprint', () => {
+  const fingerprint = 'NCI-LEDGER-AEF25E9D3A64';
+  const original = row('o-1', 1, {
+    ledger_fingerprint: fingerprint,
+    metadata: { ledgerFingerprint:fingerprint, baseline:'NCI USD 1.1.02' }
+  });
+  const baseline = row('b-1', 1, {
+    ledger_fingerprint: fingerprint,
+    metadata: {
+      ledgerFingerprint:fingerprint,
+      baseline:'NCI USD 1.1.02',
+      originalTransactionType:'BUY',
+      sourceIndex:0,
+      sourceLedgerId:'ledger-1',
+      sourceLedgerType:'BUY'
+    }
+  });
+
+  const result = classifyLedgerRows([original, baseline], fingerprint);
+  assert.deepEqual(result.originals.map(item => item.id), ['o-1']);
+  assert.deepEqual(result.baselines.map(item => item.id), ['b-1']);
 });
