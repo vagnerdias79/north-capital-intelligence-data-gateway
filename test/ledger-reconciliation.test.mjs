@@ -58,10 +58,7 @@ test('classifies only migration-linked rows as baselines when all rows share the
     metadata: {
       ledgerFingerprint:fingerprint,
       baseline:'NCI USD 1.1.02',
-      originalTransactionType:'BUY',
-      sourceIndex:0,
-      sourceLedgerId:'ledger-1',
-      sourceLedgerType:'BUY'
+      originalTransactionType:'BUY'
     }
   });
 
