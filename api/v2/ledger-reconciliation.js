@@ -10,6 +10,53 @@ const EXPECTED = Object.freeze({
   divergences: 9
 });
 
+function diagnosticValue(value) {
+  if (value == null) return 'null';
+  if (Array.isArray(value)) return `[array:${value.length}]`;
+  if (typeof value === 'object') return `[object:${Object.keys(value).sort().join(',')}]`;
+  return String(value).slice(0, 120);
+}
+
+function buildClassificationDiagnostics(rows) {
+  const sourceCounts = {};
+  const createdAtCounts = {};
+  const metadataProfiles = new Map();
+
+  for (const row of rows) {
+    const source = String(row.source ?? 'null');
+    sourceCounts[source] = (sourceCounts[source] || 0) + 1;
+
+    const createdAt = row.created_at instanceof Date
+      ? row.created_at.toISOString()
+      : String(row.created_at ?? 'null');
+    createdAtCounts[createdAt] = (createdAtCounts[createdAt] || 0) + 1;
+
+    const metadata = row.metadata && typeof row.metadata === 'object' ? row.metadata : {};
+    for (const [key, value] of Object.entries(metadata)) {
+      const profile = metadataProfiles.get(key) || { present:0, values:new Map() };
+      const diagnostic = diagnosticValue(value);
+      profile.present += 1;
+      profile.values.set(diagnostic, (profile.values.get(diagnostic) || 0) + 1);
+      metadataProfiles.set(key, profile);
+    }
+  }
+
+  const metadata = Object.fromEntries(
+    [...metadataProfiles.entries()].sort(([a], [b]) => a.localeCompare(b)).map(([key, profile]) => [key, {
+      present: profile.present,
+      distinctValues: profile.values.size,
+      values: Object.fromEntries([...profile.values.entries()].slice(0, 12))
+    }])
+  );
+
+  return {
+    purpose: 'Identify the real original/baseline discriminator without exposing financial values.',
+    sourceCounts,
+    createdAtCounts,
+    metadata
+  };
+}
+
 export default async function handler(req, res) {
   if (req.method !== 'GET') return methodNotAllowed(res, ['GET']);
 
@@ -65,6 +112,7 @@ export default async function handler(req, res) {
     const originals = rows.filter(row => row.ledger_fingerprint !== snapshot.fingerprint);
     const result = reconcile(originals, baselines);
     const divergentPairs = result.pairs.filter(pair => pair.status === 'DIVERGENT');
+    const classificationDiagnostics = buildClassificationDiagnostics(rows);
     const checks = {
       readOnly: true,
       fingerprint: snapshot.fingerprint === EXPECTED.fingerprint,
@@ -108,6 +156,7 @@ export default async function handler(req, res) {
         originals:result.unmatchedOriginals,
         baselines:result.unmatchedBaselines
       },
+      classificationDiagnostics,
       writeOperationsEnabled:false,
       timestamp:new Date().toISOString()
     });
