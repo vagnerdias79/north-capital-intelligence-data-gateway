@@ -3,7 +3,24 @@
 Data de abertura: 24/09/2026  
 Origem: Fase 2.7 homologada no commit `9df078b`  
 Modo obrigatório: `READ_ONLY`  
-Status: **EM HOMOLOGAÇÃO**
+Status: **HOMOLOGADA — PASS**
+
+## Evidência de homologação
+
+- Data/hora UTC: `2026-09-24T20:01:42.847Z`.
+- Commit validado: `8e55465`.
+- Ambiente: Vercel Preview autenticado.
+- Resultado: `TAX PRODUCTION READINESS 2.8 — PASS`.
+- Decisão: `GO_AWAITING_MANUAL_APPROVAL`.
+- Candidata: `NORMALIZED_SINGLE_TAX_CASH_EFFECT`.
+- Eventos TAX: `9`.
+- Total selecionado: `USD -0.54`.
+- Diferença total e divergências: `0`.
+- Rollback legado: verificado.
+- Autorização manual obrigatória: `true`.
+- Promoção produtiva autorizada: `false`.
+- Cálculo de produção alterado: `false`.
+- Operações de escrita habilitadas: `false`.
 
 ## Objetivo
 
