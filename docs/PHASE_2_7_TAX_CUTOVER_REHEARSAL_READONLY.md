@@ -3,7 +3,23 @@
 Data de abertura: 24/09/2026  
 Origem: Fase 2.6 homologada no commit `adc4088`  
 Modo obrigatório: `READ_ONLY`  
-Status: **EM HOMOLOGAÇÃO**
+Status: **HOMOLOGADA — PASS**
+
+## Evidência de homologação
+
+- Data/hora UTC: `2026-09-24T19:51:32.410Z`.
+- Commit validado: `5b38088`.
+- Ambiente: Vercel Preview autenticado.
+- Resultado: `TAX CUTOVER REHEARSAL 2.7 — PASS`.
+- Candidata normalizada: ativa e elegível durante o ensaio.
+- Eventos TAX: `9`.
+- Total normalizado e legado: `USD -0.54`.
+- Diferença total: `0`.
+- Divergências: `0`.
+- Cutover pronto: `true`.
+- Rollback para a fonte legada: restaurado.
+- Cálculo de produção alterado: `false`.
+- Operações de escrita habilitadas: `false`.
 
 ## Objetivo
 
