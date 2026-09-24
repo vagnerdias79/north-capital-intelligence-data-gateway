@@ -3,6 +3,7 @@ import { json, methodNotAllowed } from '../../lib/http.js';
 import { requireNeonIdentity } from '../../lib/auth-jwt.js';
 import { simulateTaxPolicy } from '../../lib/tax-cash-effect.js';
 import { compareTaxShadowRows } from '../../lib/tax-shadow-comparison.js';
+import { selectTaxCalculationSource } from '../../lib/tax-calculation-source.js';
 
 const EXPECTED = Object.freeze({
   fingerprint:'NCI-LEDGER-AEF25E9D3A64',
@@ -54,6 +55,59 @@ export default async function handler(req, res) {
       fingerprint:rows.every(row => row.ledger_fingerprint === EXPECTED.fingerprint)
     };
     const shadowMode = String(req.query?.mode ?? '') === 'shadow';
+    const normalizedPreviewMode = String(req.query?.mode ?? '') === 'normalized-preview';
+
+    if (normalizedPreviewMode) {
+      if (String(process.env.VERCEL_ENV ?? '').toLowerCase() !== 'preview') {
+        return json(res, 403, {
+          ok:false,
+          error:'TAX_NORMALIZED_PREVIEW_ONLY',
+          featureFlag:'TAX_NORMALIZED_SOURCE_PREVIEW',
+          activeSource:'LEGACY_METADATA_RAW_VALUE',
+          productionCalculationChanged:false,
+          writeOperationsEnabled:false
+        });
+      }
+
+      const activation = selectTaxCalculationSource(rows, {
+        requestedSource:'normalized',
+        environment:process.env.VERCEL_ENV
+      });
+      const checks = {
+        ...baseChecks,
+        previewEnvironment:activation.previewEnvironment === true,
+        events9:activation.eventCount === EXPECTED.eventCount,
+        normalizedTotal054:activation.normalizedTotal === EXPECTED.totalCashEffect,
+        legacyTotal054:activation.legacyTotal === EXPECTED.totalCashEffect,
+        zeroDifference:activation.totalDifference === 0,
+        equivalent:activation.equivalent === true,
+        normalizedActive:activation.normalizedActive === true,
+        rollbackReady:activation.rollbackSource === 'LEGACY_METADATA_RAW_VALUE',
+        dashboardUnchanged:activation.dashboardCalculationChanged === false,
+        writesBlocked:activation.writeOperationsEnabled === false
+      };
+
+      return json(res, 200, {
+        ok:true,
+        mode:'READ_ONLY',
+        phase:'2.5',
+        authenticated:true,
+        portfolio:{
+          code:portfolio.code,
+          status:portfolio.status,
+          baselineVersion:portfolio.baseline_version
+        },
+        fingerprint:EXPECTED.fingerprint,
+        strategy:'PREVIEW_FEATURE_FLAG',
+        featureFlag:'TAX_NORMALIZED_SOURCE_PREVIEW',
+        activation,
+        checks,
+        validation:Object.values(checks).every(Boolean) ? 'PASS' : 'REVIEW_REQUIRED',
+        productionCalculationChanged:false,
+        writeOperationsEnabled:false,
+        timestamp:new Date().toISOString()
+      });
+    }
 
     if (shadowMode) {
       const comparison = compareTaxShadowRows(rows);
