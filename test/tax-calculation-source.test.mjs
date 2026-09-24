@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import {
   assessTaxProductionReadiness,
   rehearseTaxCalculationCutover,
+  selectDashboardTaxSource,
   selectTaxCalculationSource
 } from '../lib/tax-calculation-source.js';
 
@@ -67,6 +68,50 @@ test('never changes the dashboard calculation in production', () => {
   assert.equal(result.normalizedActive, false);
   assert.equal(result.dashboardCalculationChanged, false);
   assert.equal(result.activeSource, 'LEGACY_METADATA_RAW_VALUE');
+});
+
+test('activates normalized dashboard source in production only with explicit flag', () => {
+  const result = selectDashboardTaxSource(rows(), {
+    environment:'production',
+    productionEnabled:true,
+    integrityVerified:true
+  });
+
+  assert.equal(result.decision, 'NORMALIZED_ACTIVE');
+  assert.equal(result.activeSource, 'NORMALIZED_SINGLE_TAX_CASH_EFFECT');
+  assert.equal(result.productionEnabled, true);
+  assert.equal(result.dashboardCalculationChanged, true);
+  assert.equal(result.automaticRollback, false);
+  assert.equal(result.writeOperationsEnabled, false);
+});
+
+test('keeps legacy dashboard source when production flag is disabled', () => {
+  const result = selectDashboardTaxSource(rows(), {
+    environment:'production',
+    productionEnabled:false,
+    integrityVerified:true
+  });
+
+  assert.equal(result.decision, 'LEGACY_ACTIVE');
+  assert.equal(result.activeSource, 'LEGACY_METADATA_RAW_VALUE');
+  assert.equal(result.dashboardCalculationChanged, false);
+  assert.equal(result.automaticRollback, false);
+});
+
+test('rolls production back to legacy immediately when integrity is lost', () => {
+  const divergentRows = rows();
+  divergentRows[0].metadata.raw.value = -0.12;
+  const result = selectDashboardTaxSource(divergentRows, {
+    environment:'production',
+    productionEnabled:true,
+    integrityVerified:false
+  });
+
+  assert.equal(result.decision, 'AUTOMATIC_ROLLBACK_TO_LEGACY');
+  assert.equal(result.activeSource, 'LEGACY_METADATA_RAW_VALUE');
+  assert.equal(result.normalizedActive, false);
+  assert.equal(result.automaticRollback, true);
+  assert.equal(result.writeOperationsEnabled, false);
 });
 
 test('fails closed to legacy when shadow equivalence is lost', () => {

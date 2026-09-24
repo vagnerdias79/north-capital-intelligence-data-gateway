@@ -6,6 +6,7 @@ import { compareTaxShadowRows } from '../../lib/tax-shadow-comparison.js';
 import {
   assessTaxProductionReadiness,
   rehearseTaxCalculationCutover,
+  selectDashboardTaxSource,
   selectTaxCalculationSource
 } from '../../lib/tax-calculation-source.js';
 
@@ -63,6 +64,73 @@ export default async function handler(req, res) {
     const dashboardPreviewMode = String(req.query?.mode ?? '') === 'dashboard-preview';
     const cutoverRehearsalMode = String(req.query?.mode ?? '') === 'cutover-rehearsal';
     const productionReadinessMode = String(req.query?.mode ?? '') === 'production-readiness';
+    const dashboardSourceMode = String(req.query?.mode ?? '') === 'dashboard-source';
+
+    if (dashboardSourceMode) {
+      const environment = String(process.env.VERCEL_ENV ?? '').toLowerCase();
+      if (environment !== 'preview' && environment !== 'production') {
+        return json(res, 403, {
+          ok:false,
+          error:'TAX_DASHBOARD_SOURCE_ENVIRONMENT_BLOCKED',
+          activeSource:'LEGACY_METADATA_RAW_VALUE',
+          writeOperationsEnabled:false
+        });
+      }
+
+      const productionEnabled =
+        String(process.env.TAX_NORMALIZED_PRODUCTION_ENABLED ?? '').toLowerCase() === 'true';
+      const comparison = compareTaxShadowRows(rows);
+      const integrityVerified =
+        baseChecks.frozen === true &&
+        baseChecks.baselineProtected === true &&
+        baseChecks.fingerprint === true &&
+        comparison.eventCount === EXPECTED.eventCount &&
+        comparison.normalizedTotal === EXPECTED.totalCashEffect &&
+        comparison.legacyTotal === EXPECTED.totalCashEffect &&
+        comparison.totalDifference === 0 &&
+        comparison.divergences.length === 0 &&
+        comparison.equivalent === true;
+      const activation = selectDashboardTaxSource(rows, {
+        environment,
+        productionEnabled,
+        integrityVerified
+      });
+      const checks = {
+        ...baseChecks,
+        environmentAllowed:true,
+        integrityVerified,
+        events9:activation.eventCount === EXPECTED.eventCount,
+        zeroDifference:activation.totalDifference === 0,
+        zeroDivergences:activation.divergences.length === 0,
+        rollbackReady:activation.rollbackSource === 'LEGACY_METADATA_RAW_VALUE',
+        safeSourceSelected:activation.normalizedActive === true ||
+          activation.activeSource === 'LEGACY_METADATA_RAW_VALUE',
+        writesBlocked:activation.writeOperationsEnabled === false
+      };
+
+      return json(res, 200, {
+        ok:true,
+        mode:'READ_ONLY',
+        phase:environment === 'production' ? '2.9' : '2.6',
+        authenticated:true,
+        portfolio:{
+          code:portfolio.code,
+          status:portfolio.status,
+          baselineVersion:portfolio.baseline_version
+        },
+        fingerprint:EXPECTED.fingerprint,
+        strategy:'CONTROLLED_DASHBOARD_TAX_SOURCE',
+        featureFlag:activation.featureFlag,
+        activation,
+        checks,
+        validation:integrityVerified ? 'PASS' : 'AUTOMATIC_ROLLBACK',
+        productionCalculationChanged:
+          environment === 'production' && activation.normalizedActive === true,
+        automaticRollback:activation.automaticRollback,
+        writeOperationsEnabled:false,
+        timestamp:new Date().toISOString()
+      });
+    }
 
     if (productionReadinessMode) {
       if (String(process.env.VERCEL_ENV ?? '').toLowerCase() !== 'preview') {
