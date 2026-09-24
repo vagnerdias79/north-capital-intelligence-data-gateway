@@ -2,6 +2,7 @@ import { db } from '../../lib/db.js';
 import { json, methodNotAllowed } from '../../lib/http.js';
 import { requireNeonIdentity } from '../../lib/auth-jwt.js';
 import { simulateTaxPolicy } from '../../lib/tax-cash-effect.js';
+import { compareTaxShadowRows } from '../../lib/tax-shadow-comparison.js';
 
 const EXPECTED = Object.freeze({
   fingerprint:'NCI-LEDGER-AEF25E9D3A64',
@@ -34,7 +35,7 @@ export default async function handler(req, res) {
     const rows = await sql`
       select
         t.id, t.transaction_type, t.trade_date, a.symbol as ticker,
-        t.gross_amount, t.tax_amount, t.external_ref,
+        t.gross_amount, t.tax_amount, t.external_ref, t.metadata,
         t.metadata ->> 'ledgerFingerprint' as ledger_fingerprint
       from transactions t
       left join assets a on a.id = t.asset_id
@@ -45,13 +46,52 @@ export default async function handler(req, res) {
       order by t.trade_date asc, t.created_at asc, t.id asc
     `;
 
-    const simulation = simulateTaxPolicy(rows);
-    const checks = {
+    const baseChecks = {
       readOnly:true,
       authenticated:true,
       frozen:portfolio.status === 'FROZEN',
       baselineProtected:portfolio.baseline_version === 'NCI USD 1.1.02',
-      fingerprint:rows.every(row => row.ledger_fingerprint === EXPECTED.fingerprint),
+      fingerprint:rows.every(row => row.ledger_fingerprint === EXPECTED.fingerprint)
+    };
+    const shadowMode = String(req.query?.mode ?? '') === 'shadow';
+
+    if (shadowMode) {
+      const comparison = compareTaxShadowRows(rows);
+      const checks = {
+        ...baseChecks,
+        events9:comparison.eventCount === EXPECTED.eventCount,
+        normalizedTotal054:comparison.normalizedTotal === EXPECTED.totalCashEffect,
+        legacyTotal054:comparison.legacyTotal === EXPECTED.totalCashEffect,
+        zeroDifference:comparison.totalDifference === 0,
+        zeroDivergences:comparison.divergences.length === 0,
+        equivalent:comparison.equivalent === true,
+        writesBlocked:comparison.writeOperationsEnabled === false
+      };
+
+      return json(res, 200, {
+        ok:true,
+        mode:'READ_ONLY',
+        phase:'2.4',
+        authenticated:true,
+        portfolio:{
+          code:portfolio.code,
+          status:portfolio.status,
+          baselineVersion:portfolio.baseline_version
+        },
+        fingerprint:EXPECTED.fingerprint,
+        strategy:'SHADOW_COMPARISON',
+        comparison,
+        checks,
+        validation:Object.values(checks).every(Boolean) ? 'PASS' : 'REVIEW_REQUIRED',
+        dashboardCalculationChanged:false,
+        writeOperationsEnabled:false,
+        timestamp:new Date().toISOString()
+      });
+    }
+
+    const simulation = simulateTaxPolicy(rows);
+    const checks = {
+      ...baseChecks,
       events9:simulation.eventCount === EXPECTED.eventCount,
       totalCashEffect054:simulation.totalCashEffect === EXPECTED.totalCashEffect,
       absoluteTotal054:simulation.absoluteTotal === EXPECTED.absoluteTotal,
