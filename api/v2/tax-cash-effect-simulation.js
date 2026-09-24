@@ -3,7 +3,10 @@ import { json, methodNotAllowed } from '../../lib/http.js';
 import { requireNeonIdentity } from '../../lib/auth-jwt.js';
 import { simulateTaxPolicy } from '../../lib/tax-cash-effect.js';
 import { compareTaxShadowRows } from '../../lib/tax-shadow-comparison.js';
-import { selectTaxCalculationSource } from '../../lib/tax-calculation-source.js';
+import {
+  rehearseTaxCalculationCutover,
+  selectTaxCalculationSource
+} from '../../lib/tax-calculation-source.js';
 
 const EXPECTED = Object.freeze({
   fingerprint:'NCI-LEDGER-AEF25E9D3A64',
@@ -57,6 +60,60 @@ export default async function handler(req, res) {
     const shadowMode = String(req.query?.mode ?? '') === 'shadow';
     const normalizedPreviewMode = String(req.query?.mode ?? '') === 'normalized-preview';
     const dashboardPreviewMode = String(req.query?.mode ?? '') === 'dashboard-preview';
+    const cutoverRehearsalMode = String(req.query?.mode ?? '') === 'cutover-rehearsal';
+
+    if (cutoverRehearsalMode) {
+      if (String(process.env.VERCEL_ENV ?? '').toLowerCase() !== 'preview') {
+        return json(res, 403, {
+          ok:false,
+          error:'TAX_CUTOVER_REHEARSAL_PREVIEW_ONLY',
+          featureFlag:'TAX_NORMALIZED_PRODUCTION_CANDIDATE',
+          activeSource:'LEGACY_METADATA_RAW_VALUE',
+          productionCalculationChanged:false,
+          writeOperationsEnabled:false
+        });
+      }
+
+      const rehearsal = rehearseTaxCalculationCutover(rows, {
+        environment:process.env.VERCEL_ENV
+      });
+      const checks = {
+        ...baseChecks,
+        previewEnvironment:rehearsal.previewEnvironment === true,
+        events9:rehearsal.candidate.eventCount === EXPECTED.eventCount,
+        normalizedTotal054:rehearsal.candidate.normalizedTotal === EXPECTED.totalCashEffect,
+        legacyTotal054:rehearsal.candidate.legacyTotal === EXPECTED.totalCashEffect,
+        zeroDifference:rehearsal.candidate.totalDifference === 0,
+        zeroDivergences:rehearsal.candidate.divergences.length === 0,
+        candidateNormalized:rehearsal.candidate.activeSource === 'NORMALIZED_SINGLE_TAX_CASH_EFFECT',
+        rollbackRestored:rehearsal.rollback.restored === true,
+        rollbackLegacy:rehearsal.rollback.activeSource === 'LEGACY_METADATA_RAW_VALUE',
+        cutoverReady:rehearsal.cutoverReady === true,
+        productionUnchanged:rehearsal.productionCalculationChanged === false,
+        writesBlocked:rehearsal.writeOperationsEnabled === false
+      };
+
+      return json(res, 200, {
+        ok:true,
+        mode:'READ_ONLY',
+        phase:'2.7',
+        authenticated:true,
+        portfolio:{
+          code:portfolio.code,
+          status:portfolio.status,
+          baselineVersion:portfolio.baseline_version
+        },
+        fingerprint:EXPECTED.fingerprint,
+        strategy:rehearsal.strategy,
+        featureFlag:rehearsal.featureFlag,
+        rehearsal,
+        checks,
+        validation:Object.values(checks).every(Boolean) ? 'PASS' : 'REVIEW_REQUIRED',
+        productionCalculationChanged:false,
+        writeOperationsEnabled:false,
+        timestamp:new Date().toISOString()
+      });
+    }
 
     if (normalizedPreviewMode || dashboardPreviewMode) {
       if (String(process.env.VERCEL_ENV ?? '').toLowerCase() !== 'preview') {
