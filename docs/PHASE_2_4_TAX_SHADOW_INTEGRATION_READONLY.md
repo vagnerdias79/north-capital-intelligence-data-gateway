@@ -3,7 +3,7 @@
 Data de abertura: 24/09/2026  
 Origem: Fase 2.3 homologada no commit `ad44efe`  
 Modo obrigatório: `READ_ONLY`  
-Status inicial: **PLANEJAMENTO**
+Status: **HOMOLOGADA — PASS**
 
 ## Objetivo
 
@@ -54,3 +54,23 @@ Para cada um dos nove eventos TAX:
 - Nenhuma escrita.
 - Preview autenticado com `PASS`.
 - Homologação humana antes de qualquer substituição do legado.
+
+## Homologação
+
+Homologação humana concluída em 24/09/2026 no Preview autenticado.
+
+Evidência retornada pela comparação shadow:
+
+- `validation: PASS`;
+- `authenticated: true`;
+- `eventCount: 9`;
+- `normalizedTotal: -0.54`;
+- `legacyTotal: -0.54`;
+- `totalDifference: 0`;
+- `equivalent: true`;
+- `divergences: []`;
+- `dashboardCalculationChanged: false`;
+- `writeOperationsEnabled: false`;
+- timestamp da evidência: `2026-09-24T13:54:42.543Z`.
+
+Conclusão: o efeito de caixa TAX normalizado é equivalente ao legado nos nove eventos, sem divergências, dupla contagem, alteração do dashboard ou escrita no banco. A baseline `NCI USD 1.1.02` e o fingerprint `NCI-LEDGER-AEF25E9D3A64` permaneceram preservados.
