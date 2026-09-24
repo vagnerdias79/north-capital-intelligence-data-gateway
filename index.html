@@ -6506,7 +6506,7 @@ import { createAuthClient } from 'https://esm.sh/@neondatabase/auth';
     el.type='button';
     el.id='nciTaxDashboardPreviewStatus';
     el.className='pill nci-tax-warn';
-    el.textContent='TAX Dashboard 2.6 · verificando';
+    el.textContent='TAX Dashboard · verificando';
     bar.appendChild(el);
     el.onclick=showDiagnostic;
     return el;
@@ -6521,19 +6521,19 @@ import { createAuthClient } from 'https://esm.sh/@neondatabase/auth';
     root.querySelector('.nci-tax-preview-note')?.remove();
     const note=document.createElement('div');
     note.className='nci-tax-preview-note';
-    note.innerHTML='<b>TAX normalizado Preview 2.6</b> · efeito de caixa US$ -0,54 · 9 eventos autenticados · patrimônio preservado sem dupla dedução.';
+    note.innerHTML='<b>TAX normalizado '+result.phase+'</b> · efeito de caixa US$ -0,54 · 9 eventos autenticados · patrimônio preservado sem dupla dedução.';
     root.prepend(note);
   }
   function showDiagnostic(){
     const r=window.NCI_DASHBOARD_TAX_PREVIEW;
-    if(!r){alert('NCI TAX Dashboard Preview 2.6\n\nAguardando execução.');return}
+    if(!r){alert('NCI TAX Dashboard\n\nAguardando execução.');return}
     alert(
-      'NCI TAX Dashboard Preview 2.6\n\n'+
+      'NCI TAX Dashboard — fonte controlada\n\n'+
       'Status: '+r.status+'\n'+
       'Fonte: '+(r.activeSource||'—')+'\n'+
       'Eventos: '+(r.eventCount??'—')+'\n'+
       'Efeito de caixa: US$ '+Number(r.selectedTotal||0).toFixed(2)+'\n'+
-      'Produção alterada: NÃO\n'+
+      'Produção alterada: '+(r.productionCalculationChanged?'SIM':'NÃO')+'\n'+
       'Escritas habilitadas: NÃO'
     );
   }
@@ -6549,47 +6549,65 @@ import { createAuthClient } from 'https://esm.sh/@neondatabase/auth';
       const token=findJwt(sessionResult);
       if(!session?.user||!token){
         window.NCI_DASHBOARD_TAX_PREVIEW=Object.freeze({status:'AUTH_REQUIRED'});
-        setPill('nci-tax-warn','TAX Dashboard 2.6 · login','Sessão Neon Auth necessária.');
+        setPill('nci-tax-warn','TAX Dashboard · login','Sessão Neon Auth necessária.');
         return;
       }
       const resp=await fetch(CFG.endpoint,{headers:{Authorization:`Bearer ${token}`},cache:'no-store'});
       const data=await resp.json();
       if(!resp.ok||!data?.ok)throw new Error(data?.error||('HTTP_'+resp.status));
       const a=data.activation||{};
+      const production=data.phase==='2.9';
+      const normalized=a.normalizedActive===true&&
+        a.activeSource==='NORMALIZED_SINGLE_TAX_CASH_EFFECT';
+      const legacy=a.normalizedActive===false&&
+        a.activeSource==='LEGACY_METADATA_RAW_VALUE';
+      const rollback=a.automaticRollback===true||data.automaticRollback===true;
       const checks={
-        phase:data.phase==='2.6',
-        validation:data.validation==='PASS',
+        phase:data.phase==='2.6'||data.phase==='2.9',
+        validation:data.validation==='PASS'||data.validation==='AUTOMATIC_ROLLBACK',
         fingerprint:data.fingerprint===CFG.expectedFingerprint,
-        normalized:a.normalizedActive===true&&a.activeSource==='NORMALIZED_SINGLE_TAX_CASH_EFFECT',
+        safeSource:normalized||legacy,
         events:a.eventCount===CFG.expectedEvents,
         total:a.selectedTotal===CFG.expectedTotal,
-        dashboard:a.dashboardCalculationChanged===true&&data.dashboardCalculationChanged===true,
-        production:data.productionCalculationChanged===false,
+        dashboard:a.dashboardCalculationChanged===normalized,
+        production:data.productionCalculationChanged===(production&&normalized),
         writes:data.writeOperationsEnabled===false&&a.writeOperationsEnabled===false
       };
       const pass=Object.values(checks).every(Boolean);
+      const status=!pass?'FAIL':rollback?'AUTOMATIC_ROLLBACK':normalized?'PASS':'LEGACY_SAFE';
       const result=Object.freeze({
-        status:pass?'PASS':'FAIL',
+        status,
         checks,
+        phase:data.phase,
+        decision:a.decision||null,
         activeSource:a.activeSource||null,
         eventCount:a.eventCount??null,
         selectedTotal:a.selectedTotal??null,
         fingerprint:data.fingerprint||null,
+        productionCalculationChanged:data.productionCalculationChanged===true,
+        automaticRollback:rollback,
         checkedAt:new Date().toISOString()
       });
       window.NCI_DASHBOARD_TAX_PREVIEW=result;
-      if(!pass)throw new Error('PHASE_2_6_CHECK_FAILED');
+      if(!pass)throw new Error('TAX_DASHBOARD_CHECK_FAILED');
       window.NCIDashboard?.update?.({
         taxCashEffect:a.selectedTotal,
         taxSource:a.activeSource,
-        taxPhase:'2.6'
+        taxPhase:data.phase
       });
-      decorate(result);
-      setPill('nci-tax-ok','TAX Dashboard 2.6 · PASS','Fonte normalizada autenticada no Preview; sem dupla dedução no patrimônio.');
+      if(normalized)decorate(result);
+      else document.querySelector('#dashboard .nci-dash .nci-tax-preview-note')?.remove();
+      if(rollback){
+        setPill('nci-tax-bad','TAX Dashboard '+data.phase+' · ROLLBACK','Divergência detectada; fonte legada restaurada automaticamente.');
+      }else if(normalized){
+        setPill('nci-tax-ok','TAX Dashboard '+data.phase+' · NORMALIZADO','Fonte normalizada autenticada e íntegra; escritas bloqueadas.');
+      }else{
+        setPill('nci-tax-ok','TAX Dashboard '+data.phase+' · LEGADO SEGURO','Flag desativada; fonte legada preservada e escritas bloqueadas.');
+      }
       window.dispatchEvent(new CustomEvent('nci:tax-dashboard-preview',{detail:result}));
     }catch(err){
       window.NCI_DASHBOARD_TAX_PREVIEW=Object.freeze({status:'UNAVAILABLE',error:String(err?.message||err)});
-      setPill('nci-tax-bad','TAX Dashboard 2.6 · indisponível','Fonte legada preservada; nenhuma alteração aplicada.');
+      setPill('nci-tax-bad','TAX Dashboard · indisponível','Fonte legada preservada; nenhuma alteração aplicada.');
     }
   }
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',run,{once:true});
