@@ -3,7 +3,25 @@
 Data de abertura: 24/09/2026  
 Origem: Fase 2.5 homologada no commit `0f21ab4`  
 Modo obrigatório: `READ_ONLY`  
-Status: **EM HOMOLOGAÇÃO**
+Status: **HOMOLOGADA — PASS**
+
+## Evidência de homologação
+
+- Data/hora UTC: `2026-09-24T19:38:29.654Z`.
+- Commit validado: `8fc92ef`.
+- Ambiente validado: Vercel Preview autenticado.
+- Resultado: `TAX DASHBOARD PREVIEW 2.6 — PASS`.
+- Estratégia: `DASHBOARD_NORMALIZED_TAX_PREVIEW`.
+- Fonte ativa: `NORMALIZED_SINGLE_TAX_CASH_EFFECT`.
+- Eventos TAX: `9`.
+- Total normalizado: `USD -0.54`.
+- Total legado: `USD -0.54`.
+- Diferença total: `0`.
+- Divergências: `0`.
+- Dashboard Preview alterado: `true`.
+- Cálculo de produção alterado: `false`.
+- Operações de escrita habilitadas: `false`.
+- Rollback para `LEGACY_METADATA_RAW_VALUE`: pronto.
 
 ## Objetivo
 
