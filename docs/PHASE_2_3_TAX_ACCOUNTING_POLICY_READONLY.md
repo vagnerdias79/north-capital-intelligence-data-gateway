@@ -3,7 +3,7 @@
 Data de abertura: 23/09/2026  
 Origem: commit homologado `5798980` da Fase 2.2  
 Modo obrigatório: `READ_ONLY`  
-Status inicial: **PLANEJAMENTO**
+Status final: **HOMOLOGADA — PASS**
 
 ## Objetivo
 
@@ -149,3 +149,36 @@ magnitudes divergem, a operação é interrompida para revisão humana.
 
 Esta prova não altera o dashboard, a API, o banco ou a baseline. A integração
 do normalizador com qualquer consumidor permanece condicionada à homologação.
+
+## Homologação autenticada
+
+Data: 24/09/2026  
+Timestamp da evidência: `2026-09-24T11:38:05.539Z`  
+Resultado: **TAX CASH EFFECT 2.3 — PASS**
+
+### Evidências
+
+- `mode: READ_ONLY`
+- `phase: 2.3`
+- `authenticated: true`
+- portfólio `USD-INTL` em estado `FROZEN`
+- baseline `NCI USD 1.1.02` protegida
+- fingerprint `NCI-LEDGER-AEF25E9D3A64` confirmado
+- política simulada: `SINGLE_TAX_CASH_EFFECT`
+- `eventCount: 9`
+- `totalCashEffect: -0.54`
+- `absoluteTotal: 0.54`
+- `noDoubleCounting: true`
+- `writeOperationsEnabled: false`
+- todos os controles retornaram `true`
+- `validation: PASS`
+
+### Decisão de encerramento
+
+A Fase 2.3 está homologada. A simulação provou que os campos
+`tax_amount` e `gross_amount` representam a mesma magnitude econômica nos
+nove originais, e que o motor pode produzir um único efeito de caixa negativo
+por evento sem dupla contagem.
+
+Nenhuma integração com o dashboard, correção de registros ou promoção para
+`main` foi autorizada nesta fase.
