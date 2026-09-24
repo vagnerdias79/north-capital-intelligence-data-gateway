@@ -4,6 +4,7 @@ import { requireNeonIdentity } from '../../lib/auth-jwt.js';
 import { simulateTaxPolicy } from '../../lib/tax-cash-effect.js';
 import { compareTaxShadowRows } from '../../lib/tax-shadow-comparison.js';
 import {
+  assessTaxProductionReadiness,
   rehearseTaxCalculationCutover,
   selectTaxCalculationSource
 } from '../../lib/tax-calculation-source.js';
@@ -61,6 +62,63 @@ export default async function handler(req, res) {
     const normalizedPreviewMode = String(req.query?.mode ?? '') === 'normalized-preview';
     const dashboardPreviewMode = String(req.query?.mode ?? '') === 'dashboard-preview';
     const cutoverRehearsalMode = String(req.query?.mode ?? '') === 'cutover-rehearsal';
+    const productionReadinessMode = String(req.query?.mode ?? '') === 'production-readiness';
+
+    if (productionReadinessMode) {
+      if (String(process.env.VERCEL_ENV ?? '').toLowerCase() !== 'preview') {
+        return json(res, 403, {
+          ok:false,
+          error:'TAX_PRODUCTION_READINESS_PREVIEW_ONLY',
+          decision:'NO_GO',
+          manualApprovalRequired:true,
+          productionPromotionAuthorized:false,
+          productionCalculationChanged:false,
+          writeOperationsEnabled:false
+        });
+      }
+
+      const readiness = assessTaxProductionReadiness(rows, {
+        environment:process.env.VERCEL_ENV
+      });
+      const checks = {
+        ...baseChecks,
+        previewEnvironment:readiness.previewEnvironment === true,
+        events9:readiness.eventCount === EXPECTED.eventCount,
+        selectedTotal054:readiness.selectedTotal === EXPECTED.totalCashEffect,
+        zeroDifference:readiness.totalDifference === 0,
+        zeroDivergences:readiness.divergences.length === 0,
+        candidateNormalized:readiness.candidateSource === 'NORMALIZED_SINGLE_TAX_CASH_EFFECT',
+        rollbackVerified:readiness.rollbackVerified === true,
+        rollbackLegacy:readiness.rollbackSource === 'LEGACY_METADATA_RAW_VALUE',
+        goAwaitingApproval:readiness.decision === 'GO_AWAITING_MANUAL_APPROVAL',
+        manualApprovalRequired:readiness.manualApprovalRequired === true,
+        productionNotAuthorized:readiness.productionPromotionAuthorized === false,
+        productionUnchanged:readiness.productionCalculationChanged === false,
+        writesBlocked:readiness.writeOperationsEnabled === false
+      };
+
+      return json(res, 200, {
+        ok:true,
+        mode:'READ_ONLY',
+        phase:'2.8',
+        authenticated:true,
+        portfolio:{
+          code:portfolio.code,
+          status:portfolio.status,
+          baselineVersion:portfolio.baseline_version
+        },
+        fingerprint:EXPECTED.fingerprint,
+        strategy:readiness.strategy,
+        featureFlag:readiness.featureFlag,
+        readiness,
+        checks,
+        validation:Object.values(checks).every(Boolean) ? 'PASS' : 'REVIEW_REQUIRED',
+        productionPromotionAuthorized:false,
+        productionCalculationChanged:false,
+        writeOperationsEnabled:false,
+        timestamp:new Date().toISOString()
+      });
+    }
 
     if (cutoverRehearsalMode) {
       if (String(process.env.VERCEL_ENV ?? '').toLowerCase() !== 'preview') {

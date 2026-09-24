@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {
+  assessTaxProductionReadiness,
   rehearseTaxCalculationCutover,
   selectTaxCalculationSource
 } from '../lib/tax-calculation-source.js';
@@ -118,4 +119,41 @@ test('fails closed when cutover candidate diverges', () => {
   assert.equal(result.candidate.eligible, false);
   assert.equal(result.candidate.activeSource, 'LEGACY_METADATA_RAW_VALUE');
   assert.equal(result.rollback.restored, true);
+});
+
+test('returns GO while keeping production promotion unauthorized', () => {
+  const result = assessTaxProductionReadiness(rows(), {
+    environment:'preview'
+  });
+
+  assert.equal(result.decision, 'GO_AWAITING_MANUAL_APPROVAL');
+  assert.equal(result.ready, true);
+  assert.equal(result.manualApprovalRequired, true);
+  assert.equal(result.productionPromotionAuthorized, false);
+  assert.equal(result.rollbackVerified, true);
+  assert.equal(result.productionCalculationChanged, false);
+  assert.equal(result.writeOperationsEnabled, false);
+});
+
+test('returns NO_GO outside preview', () => {
+  const result = assessTaxProductionReadiness(rows(), {
+    environment:'production'
+  });
+
+  assert.equal(result.decision, 'NO_GO');
+  assert.equal(result.ready, false);
+  assert.equal(result.productionPromotionAuthorized, false);
+});
+
+test('returns NO_GO when candidate equivalence is lost', () => {
+  const divergentRows = rows();
+  divergentRows[0].metadata.raw.value = -0.12;
+  const result = assessTaxProductionReadiness(divergentRows, {
+    environment:'preview'
+  });
+
+  assert.equal(result.decision, 'NO_GO');
+  assert.equal(result.ready, false);
+  assert.equal(result.divergences.length, 1);
+  assert.equal(result.productionPromotionAuthorized, false);
 });
