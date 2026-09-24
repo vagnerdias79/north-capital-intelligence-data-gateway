@@ -56,8 +56,9 @@ export default async function handler(req, res) {
     };
     const shadowMode = String(req.query?.mode ?? '') === 'shadow';
     const normalizedPreviewMode = String(req.query?.mode ?? '') === 'normalized-preview';
+    const dashboardPreviewMode = String(req.query?.mode ?? '') === 'dashboard-preview';
 
-    if (normalizedPreviewMode) {
+    if (normalizedPreviewMode || dashboardPreviewMode) {
       if (String(process.env.VERCEL_ENV ?? '').toLowerCase() !== 'preview') {
         return json(res, 403, {
           ok:false,
@@ -71,7 +72,8 @@ export default async function handler(req, res) {
 
       const activation = selectTaxCalculationSource(rows, {
         requestedSource:'normalized',
-        environment:process.env.VERCEL_ENV
+        environment:process.env.VERCEL_ENV,
+        dashboardConsumer:dashboardPreviewMode
       });
       const checks = {
         ...baseChecks,
@@ -83,14 +85,16 @@ export default async function handler(req, res) {
         equivalent:activation.equivalent === true,
         normalizedActive:activation.normalizedActive === true,
         rollbackReady:activation.rollbackSource === 'LEGACY_METADATA_RAW_VALUE',
-        dashboardUnchanged:activation.dashboardCalculationChanged === false,
+        dashboardSourceIntegrated:dashboardPreviewMode
+          ? activation.dashboardCalculationChanged === true
+          : activation.dashboardCalculationChanged === false,
         writesBlocked:activation.writeOperationsEnabled === false
       };
 
       return json(res, 200, {
         ok:true,
         mode:'READ_ONLY',
-        phase:'2.5',
+        phase:dashboardPreviewMode ? '2.6' : '2.5',
         authenticated:true,
         portfolio:{
           code:portfolio.code,
@@ -98,11 +102,14 @@ export default async function handler(req, res) {
           baselineVersion:portfolio.baseline_version
         },
         fingerprint:EXPECTED.fingerprint,
-        strategy:'PREVIEW_FEATURE_FLAG',
+        strategy:dashboardPreviewMode
+          ? 'DASHBOARD_NORMALIZED_TAX_PREVIEW'
+          : 'PREVIEW_FEATURE_FLAG',
         featureFlag:'TAX_NORMALIZED_SOURCE_PREVIEW',
         activation,
         checks,
         validation:Object.values(checks).every(Boolean) ? 'PASS' : 'REVIEW_REQUIRED',
+        dashboardCalculationChanged:activation.dashboardCalculationChanged,
         productionCalculationChanged:false,
         writeOperationsEnabled:false,
         timestamp:new Date().toISOString()

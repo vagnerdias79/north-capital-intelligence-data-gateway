@@ -40,6 +40,31 @@ test('keeps legacy source outside preview', () => {
   assert.equal(result.rollbackSource, 'LEGACY_METADATA_RAW_VALUE');
 });
 
+test('exposes normalized TAX to the dashboard only for the preview consumer', () => {
+  const result = selectTaxCalculationSource(rows(), {
+    requestedSource:'normalized',
+    environment:'preview',
+    dashboardConsumer:true
+  });
+
+  assert.equal(result.normalizedActive, true);
+  assert.equal(result.dashboardCalculationChanged, true);
+  assert.equal(result.selectedTotal, -0.54);
+  assert.equal(result.writeOperationsEnabled, false);
+});
+
+test('never changes the dashboard calculation in production', () => {
+  const result = selectTaxCalculationSource(rows(), {
+    requestedSource:'normalized',
+    environment:'production',
+    dashboardConsumer:true
+  });
+
+  assert.equal(result.normalizedActive, false);
+  assert.equal(result.dashboardCalculationChanged, false);
+  assert.equal(result.activeSource, 'LEGACY_METADATA_RAW_VALUE');
+});
+
 test('fails closed to legacy when shadow equivalence is lost', () => {
   const divergentRows = rows();
   divergentRows[0].metadata.raw.value = -0.12;
