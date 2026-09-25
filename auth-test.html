@@ -35,6 +35,7 @@ pre{white-space:pre-wrap;word-break:break-word;background:#06111d;border:1px sol
 <button id="readinessTax" class="secondary" hidden>Validar Prontidão 2.8</button>
 <button id="stabilityTax" class="secondary" hidden>Validar Estabilidade 2.10</button>
 <button id="monitorTax" class="secondary" hidden>Monitorar Saúde 2.11</button>
+<button id="closeTax" class="secondary" hidden>Encerrar Migração 2.12</button>
 <button id="logout" class="secondary" hidden>Sair</button>
 </p>
 <pre id="out"></pre>
@@ -44,7 +45,7 @@ pre{white-space:pre-wrap;word-break:break-word;background:#06111d;border:1px sol
 import { createAuthClient } from 'https://esm.sh/@neondatabase/auth';
 
 const $ = id => document.getElementById(id);
-const status = $('status'), out = $('out'), login = $('login'), read = $('read'), readPositions = $('readPositions'), readLedger = $('readLedger'), readTax = $('readTax'), simulateTax = $('simulateTax'), compareTax = $('compareTax'), activateTax = $('activateTax'), dashboardTax = $('dashboardTax'), cutoverTax = $('cutoverTax'), readinessTax = $('readinessTax'), stabilityTax = $('stabilityTax'), monitorTax = $('monitorTax'), logout = $('logout');
+const status = $('status'), out = $('out'), login = $('login'), read = $('read'), readPositions = $('readPositions'), readLedger = $('readLedger'), readTax = $('readTax'), simulateTax = $('simulateTax'), compareTax = $('compareTax'), activateTax = $('activateTax'), dashboardTax = $('dashboardTax'), cutoverTax = $('cutoverTax'), readinessTax = $('readinessTax'), stabilityTax = $('stabilityTax'), monitorTax = $('monitorTax'), closeTax = $('closeTax'), logout = $('logout');
 const show = value => { out.textContent = typeof value === 'string' ? value : JSON.stringify(value,null,2); };
 
 function looksLikeJwt(v){
@@ -110,6 +111,7 @@ async function init(){
       readinessTax.hidden=false;
       stabilityTax.hidden=false;
       monitorTax.hidden=false;
+      closeTax.hidden=false;
       logout.hidden=false;
     }else{
       status.innerHTML='<span class="warn">Nenhuma sessão ativa.</span>';
@@ -518,6 +520,33 @@ monitorTax.addEventListener('click', async ()=>{
     show(data);
   }catch(e){
     status.innerHTML='<span class="bad">Falha no monitoramento TAX 2.11.</span>';
+    show(String(e?.message||e));
+  }
+});
+
+closeTax.addEventListener('click', async ()=>{
+  status.textContent='Validando encerramento técnico da migração TAX 2.12...';
+  try{
+    lastSessionResult = await auth.getSession();
+    const token = findJwt(lastSessionResult);
+    if(!token){
+      status.innerHTML='<span class="bad">Sessão válida, mas JWT não localizado.</span>';
+      show({auth:'PASS',instruction:'JWT não localizado na sessão.'});
+      return;
+    }
+
+    const resp = await fetch('/api/v2/tax-cash-effect-simulation?mode=migration-closure',{
+      method:'GET',
+      headers:{Authorization:`Bearer ${token}`},
+      cache:'no-store'
+    });
+    const data = await resp.json();
+    status.innerHTML = resp.ok && data?.validation === 'PASS' && data?.migrationClosed === true
+      ? '<span class="ok">TAX MIGRATION TECHNICAL CLOSURE 2.12 — PASS.</span>'
+      : '<span class="bad">TAX MIGRATION TECHNICAL CLOSURE 2.12 — bloqueado.</span>';
+    show(data);
+  }catch(e){
+    status.innerHTML='<span class="bad">Falha no encerramento técnico TAX 2.12.</span>';
     show(String(e?.message||e));
   }
 });
