@@ -6,6 +6,7 @@ import { compareTaxShadowRows } from '../../lib/tax-shadow-comparison.js';
 import {
   assessTaxPostCutoverStability,
   assessTaxProductionReadiness,
+  monitorTaxPostCutoverHealth,
   rehearseTaxCalculationCutover,
   selectDashboardTaxSource,
   selectTaxCalculationSource
@@ -20,6 +21,9 @@ const EXPECTED = Object.freeze({
 
 export default async function handler(req, res) {
   if (req.method !== 'GET') return methodNotAllowed(res, ['GET']);
+
+  const startedAt = Date.now();
+  const requestId = req.headers?.['x-vercel-id'] ?? null;
 
   try {
     const identity = await requireNeonIdentity(req);
@@ -67,6 +71,94 @@ export default async function handler(req, res) {
     const productionReadinessMode = String(req.query?.mode ?? '') === 'production-readiness';
     const dashboardSourceMode = String(req.query?.mode ?? '') === 'dashboard-source';
     const postCutoverStabilityMode = String(req.query?.mode ?? '') === 'post-cutover-stability';
+    const postCutoverMonitoringMode = String(req.query?.mode ?? '') === 'post-cutover-monitoring';
+
+    if (postCutoverMonitoringMode) {
+      const environment = String(process.env.VERCEL_ENV ?? '').toLowerCase();
+      if (environment !== 'production') {
+        return json(res, 403, {
+          ok:false,
+          error:'TAX_POST_CUTOVER_MONITORING_PRODUCTION_ONLY',
+          productionStateChanged:false,
+          writeOperationsEnabled:false
+        });
+      }
+
+      const productionEnabled =
+        String(process.env.TAX_NORMALIZED_PRODUCTION_ENABLED ?? '').toLowerCase() === 'true';
+      const comparison = compareTaxShadowRows(rows);
+      const integrityVerified =
+        baseChecks.frozen === true &&
+        baseChecks.baselineProtected === true &&
+        baseChecks.fingerprint === true &&
+        comparison.eventCount === EXPECTED.eventCount &&
+        comparison.normalizedTotal === EXPECTED.totalCashEffect &&
+        comparison.legacyTotal === EXPECTED.totalCashEffect &&
+        comparison.totalDifference === 0 &&
+        comparison.divergences.length === 0 &&
+        comparison.equivalent === true;
+      const monitoring = monitorTaxPostCutoverHealth(rows, {
+        environment,
+        productionEnabled,
+        integrityVerified
+      });
+      const checks = {
+        ...baseChecks,
+        productionEnvironment:true,
+        productionFlagEnabled:productionEnabled,
+        integrityVerified,
+        healthy:monitoring.healthy,
+        normalizedActive:monitoring.signals.activeSource === 'NORMALIZED_SINGLE_TAX_CASH_EFFECT',
+        events9:monitoring.signals.eventCount === EXPECTED.eventCount,
+        selectedTotal054:monitoring.signals.selectedTotal === EXPECTED.totalCashEffect,
+        normalizedTotal054:monitoring.signals.normalizedTotal === EXPECTED.totalCashEffect,
+        legacyTotal054:monitoring.signals.legacyTotal === EXPECTED.totalCashEffect,
+        zeroDifference:monitoring.signals.totalDifference === 0,
+        zeroDivergences:monitoring.signals.divergenceCount === 0,
+        rollbackAvailable:monitoring.signals.rollbackAvailable === true,
+        productionStateUnchanged:monitoring.signals.productionStateChanged === false,
+        writesBlocked:monitoring.signals.writesBlocked === true
+      };
+      const validation = Object.values(checks).every(Boolean) && monitoring.healthy
+        ? 'PASS'
+        : 'ROLLBACK_REQUIRED';
+      const log = {
+        level:validation === 'PASS' ? 'info' : 'error',
+        message:'tax_post_cutover_health',
+        phase:'2.11',
+        requestId,
+        health:monitoring.health,
+        activeSource:monitoring.signals.activeSource,
+        eventCount:monitoring.signals.eventCount,
+        totalDifference:monitoring.signals.totalDifference,
+        divergenceCount:monitoring.signals.divergenceCount,
+        writesBlocked:monitoring.signals.writesBlocked,
+        durationMs:Date.now() - startedAt
+      };
+      if (validation === 'PASS') console.log(JSON.stringify(log));
+      else console.error(JSON.stringify(log));
+
+      return json(res, 200, {
+        ok:true,
+        mode:'READ_ONLY',
+        phase:'2.11',
+        authenticated:true,
+        portfolio:{
+          code:portfolio.code,
+          status:portfolio.status,
+          baselineVersion:portfolio.baseline_version
+        },
+        fingerprint:EXPECTED.fingerprint,
+        strategy:monitoring.strategy,
+        monitoring,
+        checks,
+        validation,
+        productionCalculationChanged:false,
+        productionStateChanged:false,
+        writeOperationsEnabled:false,
+        timestamp:new Date().toISOString()
+      });
+    }
 
     if (postCutoverStabilityMode) {
       const environment = String(process.env.VERCEL_ENV ?? '').toLowerCase();
