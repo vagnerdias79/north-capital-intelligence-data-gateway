@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import {
   assessTaxPostCutoverStability,
   assessTaxProductionReadiness,
+  closeTaxMigration,
   monitorTaxPostCutoverHealth,
   rehearseTaxCalculationCutover,
   selectDashboardTaxSource,
@@ -268,5 +269,35 @@ test('raises rollback-required monitoring alert when integrity fails', () => {
   assert.equal(result.alert.severity, 'CRITICAL');
   assert.equal(result.alert.action, 'ROLLBACK_TO_LEGACY');
   assert.equal(result.alert.rollbackSource, 'LEGACY_METADATA_RAW_VALUE');
+  assert.equal(result.writeOperationsEnabled, false);
+});
+
+test('closes the TAX migration while retaining legacy contingency', () => {
+  const result = closeTaxMigration(rows(), {
+    environment:'production',
+    productionEnabled:true,
+    integrityVerified:true
+  });
+
+  assert.equal(result.decision, 'TAX_MIGRATION_CLOSED');
+  assert.equal(result.migrationClosed, true);
+  assert.equal(result.normalizedSource, 'NORMALIZED_SINGLE_TAX_CASH_EFFECT');
+  assert.equal(result.rollbackSource, 'LEGACY_METADATA_RAW_VALUE');
+  assert.equal(result.rollbackSourceRetained, true);
+  assert.equal(result.operationalState, 'NORMALIZED_STABLE_WITH_LEGACY_CONTINGENCY');
+  assert.equal(result.productionStateChanged, false);
+  assert.equal(result.writeOperationsEnabled, false);
+});
+
+test('blocks TAX migration closure when monitoring is unhealthy', () => {
+  const result = closeTaxMigration(rows(), {
+    environment:'production',
+    productionEnabled:true,
+    integrityVerified:false
+  });
+
+  assert.equal(result.decision, 'CLOSURE_BLOCKED');
+  assert.equal(result.migrationClosed, false);
+  assert.equal(result.operationalState, 'REVIEW_REQUIRED');
   assert.equal(result.writeOperationsEnabled, false);
 });

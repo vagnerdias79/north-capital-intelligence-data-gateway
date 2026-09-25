@@ -6,6 +6,7 @@ import { compareTaxShadowRows } from '../../lib/tax-shadow-comparison.js';
 import {
   assessTaxPostCutoverStability,
   assessTaxProductionReadiness,
+  closeTaxMigration,
   monitorTaxPostCutoverHealth,
   rehearseTaxCalculationCutover,
   selectDashboardTaxSource,
@@ -72,6 +73,98 @@ export default async function handler(req, res) {
     const dashboardSourceMode = String(req.query?.mode ?? '') === 'dashboard-source';
     const postCutoverStabilityMode = String(req.query?.mode ?? '') === 'post-cutover-stability';
     const postCutoverMonitoringMode = String(req.query?.mode ?? '') === 'post-cutover-monitoring';
+    const migrationClosureMode = String(req.query?.mode ?? '') === 'migration-closure';
+
+    if (migrationClosureMode) {
+      const environment = String(process.env.VERCEL_ENV ?? '').toLowerCase();
+      if (environment !== 'production') {
+        return json(res, 403, {
+          ok:false,
+          error:'TAX_MIGRATION_CLOSURE_PRODUCTION_ONLY',
+          migrationClosed:false,
+          productionStateChanged:false,
+          writeOperationsEnabled:false
+        });
+      }
+
+      const productionEnabled =
+        String(process.env.TAX_NORMALIZED_PRODUCTION_ENABLED ?? '').toLowerCase() === 'true';
+      const comparison = compareTaxShadowRows(rows);
+      const integrityVerified =
+        baseChecks.frozen === true &&
+        baseChecks.baselineProtected === true &&
+        baseChecks.fingerprint === true &&
+        comparison.eventCount === EXPECTED.eventCount &&
+        comparison.normalizedTotal === EXPECTED.totalCashEffect &&
+        comparison.legacyTotal === EXPECTED.totalCashEffect &&
+        comparison.totalDifference === 0 &&
+        comparison.divergences.length === 0 &&
+        comparison.equivalent === true;
+      const closure = closeTaxMigration(rows, {
+        environment,
+        productionEnabled,
+        integrityVerified
+      });
+      const checks = {
+        ...baseChecks,
+        productionEnvironment:true,
+        productionFlagEnabled:productionEnabled,
+        integrityVerified,
+        monitoringHealthy:closure.monitoring.healthy,
+        normalizedActive:closure.normalizedSource === 'NORMALIZED_SINGLE_TAX_CASH_EFFECT',
+        events9:closure.monitoring.signals.eventCount === EXPECTED.eventCount,
+        selectedTotal054:closure.monitoring.signals.selectedTotal === EXPECTED.totalCashEffect,
+        normalizedTotal054:closure.monitoring.signals.normalizedTotal === EXPECTED.totalCashEffect,
+        legacyTotal054:closure.monitoring.signals.legacyTotal === EXPECTED.totalCashEffect,
+        zeroDifference:closure.monitoring.signals.totalDifference === 0,
+        zeroDivergences:closure.monitoring.signals.divergenceCount === 0,
+        rollbackSourceRetained:closure.rollbackSourceRetained,
+        productionStateUnchanged:closure.productionStateChanged === false,
+        writesBlocked:closure.writeOperationsEnabled === false
+      };
+      const validation = Object.values(checks).every(Boolean) && closure.migrationClosed
+        ? 'PASS'
+        : 'CLOSURE_BLOCKED';
+      const log = {
+        level:validation === 'PASS' ? 'info' : 'error',
+        message:'tax_migration_technical_closure',
+        phase:'2.12',
+        requestId,
+        decision:closure.decision,
+        operationalState:closure.operationalState,
+        activeSource:closure.normalizedSource,
+        rollbackSource:closure.rollbackSource,
+        eventCount:closure.monitoring.signals.eventCount,
+        totalDifference:closure.monitoring.signals.totalDifference,
+        divergenceCount:closure.monitoring.signals.divergenceCount,
+        writesBlocked:closure.writeOperationsEnabled === false,
+        durationMs:Date.now() - startedAt
+      };
+      if (validation === 'PASS') console.log(JSON.stringify(log));
+      else console.error(JSON.stringify(log));
+
+      return json(res, 200, {
+        ok:true,
+        mode:'READ_ONLY',
+        phase:'2.12',
+        authenticated:true,
+        portfolio:{
+          code:portfolio.code,
+          status:portfolio.status,
+          baselineVersion:portfolio.baseline_version
+        },
+        fingerprint:EXPECTED.fingerprint,
+        strategy:closure.strategy,
+        closure,
+        checks,
+        validation,
+        migrationClosed:closure.migrationClosed,
+        productionCalculationChanged:false,
+        productionStateChanged:false,
+        writeOperationsEnabled:false,
+        timestamp:new Date().toISOString()
+      });
+    }
 
     if (postCutoverMonitoringMode) {
       const environment = String(process.env.VERCEL_ENV ?? '').toLowerCase();
