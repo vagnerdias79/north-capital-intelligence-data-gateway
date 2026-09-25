@@ -34,6 +34,7 @@ pre{white-space:pre-wrap;word-break:break-word;background:#06111d;border:1px sol
 <button id="cutoverTax" class="secondary" hidden>Ensaiar Cutover 2.7</button>
 <button id="readinessTax" class="secondary" hidden>Validar Prontidão 2.8</button>
 <button id="stabilityTax" class="secondary" hidden>Validar Estabilidade 2.10</button>
+<button id="monitorTax" class="secondary" hidden>Monitorar Saúde 2.11</button>
 <button id="logout" class="secondary" hidden>Sair</button>
 </p>
 <pre id="out"></pre>
@@ -43,7 +44,7 @@ pre{white-space:pre-wrap;word-break:break-word;background:#06111d;border:1px sol
 import { createAuthClient } from 'https://esm.sh/@neondatabase/auth';
 
 const $ = id => document.getElementById(id);
-const status = $('status'), out = $('out'), login = $('login'), read = $('read'), readPositions = $('readPositions'), readLedger = $('readLedger'), readTax = $('readTax'), simulateTax = $('simulateTax'), compareTax = $('compareTax'), activateTax = $('activateTax'), dashboardTax = $('dashboardTax'), cutoverTax = $('cutoverTax'), readinessTax = $('readinessTax'), stabilityTax = $('stabilityTax'), logout = $('logout');
+const status = $('status'), out = $('out'), login = $('login'), read = $('read'), readPositions = $('readPositions'), readLedger = $('readLedger'), readTax = $('readTax'), simulateTax = $('simulateTax'), compareTax = $('compareTax'), activateTax = $('activateTax'), dashboardTax = $('dashboardTax'), cutoverTax = $('cutoverTax'), readinessTax = $('readinessTax'), stabilityTax = $('stabilityTax'), monitorTax = $('monitorTax'), logout = $('logout');
 const show = value => { out.textContent = typeof value === 'string' ? value : JSON.stringify(value,null,2); };
 
 function looksLikeJwt(v){
@@ -108,6 +109,7 @@ async function init(){
       cutoverTax.hidden=false;
       readinessTax.hidden=false;
       stabilityTax.hidden=false;
+      monitorTax.hidden=false;
       logout.hidden=false;
     }else{
       status.innerHTML='<span class="warn">Nenhuma sessão ativa.</span>';
@@ -489,6 +491,33 @@ stabilityTax.addEventListener('click', async ()=>{
     show(data);
   }catch(e){
     status.innerHTML='<span class="bad">Falha na validação pós-cutover TAX 2.10.</span>';
+    show(String(e?.message||e));
+  }
+});
+
+monitorTax.addEventListener('click', async ()=>{
+  status.textContent='Monitorando saúde pós-cutover TAX 2.11 em produção read-only...';
+  try{
+    lastSessionResult = await auth.getSession();
+    const token = findJwt(lastSessionResult);
+    if(!token){
+      status.innerHTML='<span class="bad">Sessão válida, mas JWT não localizado.</span>';
+      show({auth:'PASS',instruction:'JWT não localizado na sessão.'});
+      return;
+    }
+
+    const resp = await fetch('/api/v2/tax-cash-effect-simulation?mode=post-cutover-monitoring',{
+      method:'GET',
+      headers:{Authorization:`Bearer ${token}`},
+      cache:'no-store'
+    });
+    const data = await resp.json();
+    status.innerHTML = resp.ok && data?.validation === 'PASS'
+      ? '<span class="ok">TAX POST-CUTOVER MONITORING 2.11 — HEALTHY.</span>'
+      : '<span class="bad">TAX POST-CUTOVER MONITORING 2.11 — rollback necessário.</span>';
+    show(data);
+  }catch(e){
+    status.innerHTML='<span class="bad">Falha no monitoramento TAX 2.11.</span>';
     show(String(e?.message||e));
   }
 });
