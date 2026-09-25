@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {
+  assessTaxPostCutoverStability,
   assessTaxProductionReadiness,
   rehearseTaxCalculationCutover,
   selectDashboardTaxSource,
@@ -201,4 +202,35 @@ test('returns NO_GO when candidate equivalence is lost', () => {
   assert.equal(result.ready, false);
   assert.equal(result.divergences.length, 1);
   assert.equal(result.productionPromotionAuthorized, false);
+});
+
+test('certifies stable production cutover and probes automatic rollback without mutation', () => {
+  const result = assessTaxPostCutoverStability(rows(), {
+    environment:'production',
+    productionEnabled:true,
+    integrityVerified:true
+  });
+
+  assert.equal(result.decision, 'STABLE');
+  assert.equal(result.stable, true);
+  assert.equal(result.active.activeSource, 'NORMALIZED_SINGLE_TAX_CASH_EFFECT');
+  assert.equal(result.active.selectedTotal, -0.54);
+  assert.equal(result.rollbackProbe.decision, 'AUTOMATIC_ROLLBACK_TO_LEGACY');
+  assert.equal(result.rollbackProbe.activeSource, 'LEGACY_METADATA_RAW_VALUE');
+  assert.equal(result.rollbackProbe.productionStateChanged, false);
+  assert.equal(result.writeOperationsEnabled, false);
+});
+
+test('requires rollback when post-cutover integrity is not verified', () => {
+  const result = assessTaxPostCutoverStability(rows(), {
+    environment:'production',
+    productionEnabled:true,
+    integrityVerified:false
+  });
+
+  assert.equal(result.decision, 'ROLLBACK_REQUIRED');
+  assert.equal(result.stable, false);
+  assert.equal(result.active.activeSource, 'LEGACY_METADATA_RAW_VALUE');
+  assert.equal(result.active.automaticRollback, true);
+  assert.equal(result.writeOperationsEnabled, false);
 });
