@@ -48,19 +48,58 @@ export default async function handler(req, res) {
      * The response explicitly marks thesis as NOT_EVALUATED and never
      * exposes the resulting state as an allocation authorization.
      */
-    const enriched = applyEntryStatesToUniverse(universe, quotes, {
-      thesisValidByTicker:
-        Object.fromEntries(tickers.map(ticker => [ticker, true])),
-      eventStateByTicker: {}
-    });
+    const quoteMap = new Map(quotes.map(item => [item.ticker, item]));
+    const states = universe.map(asset => {
+      const market = quoteMap.get(asset.ticker);
+      if (!market || market.ok === false || market.marketDataReady !== true) {
+        return {
+          ticker:asset.ticker,
+          priceActionState:'DATA_UNAVAILABLE',
+          price:Number.isFinite(Number(market?.price)) ? Number(market.price) : null,
+          currency:market?.currency || 'USD',
+          source:market?.source || null,
+          sourceTimestamp:market?.sourceTimestamp || null,
+          marketDataReady:false,
+          signalScope:'PRICE_ONLY',
+          thesisStatus:'NOT_EVALUATED',
+          decisionEligible:false,
+          error:market?.error || 'MARKET_DATA_INCOMPLETE'
+        };
+      }
 
-    const states = enriched.map(asset => ({
-      ticker: asset.ticker,
-      priceActionState: asset.priceActionState || 'NORMAL',
-      signalScope: 'PRICE_ONLY',
-      thesisStatus: 'NOT_EVALUATED',
-      decisionEligible: false
-    }));
+      try {
+        const [enriched] = applyEntryStatesToUniverse([asset], [market], {
+          thesisValidByTicker:{ [asset.ticker]:true },
+          eventStateByTicker:{}
+        });
+        return {
+          ticker:asset.ticker,
+          priceActionState:enriched.priceActionState || 'NORMAL',
+          price:Number(market.price),
+          currency:market.currency || 'USD',
+          source:market.source || null,
+          sourceTimestamp:market.sourceTimestamp || null,
+          marketDataReady:true,
+          signalScope:'PRICE_ONLY',
+          thesisStatus:'NOT_EVALUATED',
+          decisionEligible:false
+        };
+      } catch (error) {
+        return {
+          ticker:asset.ticker,
+          priceActionState:'DATA_UNAVAILABLE',
+          price:Number.isFinite(Number(market.price)) ? Number(market.price) : null,
+          currency:market.currency || 'USD',
+          source:market.source || null,
+          sourceTimestamp:market.sourceTimestamp || null,
+          marketDataReady:false,
+          signalScope:'PRICE_ONLY',
+          thesisStatus:'NOT_EVALUATED',
+          decisionEligible:false,
+          error:String(error?.message || error)
+        };
+      }
+    });
 
     res.status(200).json({
       ok: true,
@@ -71,6 +110,8 @@ export default async function handler(req, res) {
       decisionAuthorization: false,
       asOf: new Date().toISOString(),
       count: states.length,
+      readyCount: states.filter(item => item.marketDataReady).length,
+      unavailableCount: states.filter(item => !item.marketDataReady).length,
       states
     });
   } catch (error) {
