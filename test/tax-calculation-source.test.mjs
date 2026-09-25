@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import {
   assessTaxPostCutoverStability,
   assessTaxProductionReadiness,
+  monitorTaxPostCutoverHealth,
   rehearseTaxCalculationCutover,
   selectDashboardTaxSource,
   selectTaxCalculationSource
@@ -232,5 +233,40 @@ test('requires rollback when post-cutover integrity is not verified', () => {
   assert.equal(result.stable, false);
   assert.equal(result.active.activeSource, 'LEGACY_METADATA_RAW_VALUE');
   assert.equal(result.active.automaticRollback, true);
+  assert.equal(result.writeOperationsEnabled, false);
+});
+
+test('reports healthy post-cutover monitoring signals without writes', () => {
+  const result = monitorTaxPostCutoverHealth(rows(), {
+    environment:'production',
+    productionEnabled:true,
+    integrityVerified:true
+  });
+
+  assert.equal(result.health, 'HEALTHY');
+  assert.equal(result.healthy, true);
+  assert.equal(result.signals.activeSource, 'NORMALIZED_SINGLE_TAX_CASH_EFFECT');
+  assert.equal(result.signals.eventCount, 9);
+  assert.equal(result.signals.selectedTotal, -0.54);
+  assert.equal(result.signals.totalDifference, 0);
+  assert.equal(result.signals.divergenceCount, 0);
+  assert.equal(result.signals.rollbackAvailable, true);
+  assert.equal(result.alert, null);
+  assert.equal(result.writeOperationsEnabled, false);
+});
+
+test('raises rollback-required monitoring alert when integrity fails', () => {
+  const result = monitorTaxPostCutoverHealth(rows(), {
+    environment:'production',
+    productionEnabled:true,
+    integrityVerified:false
+  });
+
+  assert.equal(result.health, 'ROLLBACK_REQUIRED');
+  assert.equal(result.healthy, false);
+  assert.equal(result.signals.activeSource, 'LEGACY_METADATA_RAW_VALUE');
+  assert.equal(result.alert.severity, 'CRITICAL');
+  assert.equal(result.alert.action, 'ROLLBACK_TO_LEGACY');
+  assert.equal(result.alert.rollbackSource, 'LEGACY_METADATA_RAW_VALUE');
   assert.equal(result.writeOperationsEnabled, false);
 });
