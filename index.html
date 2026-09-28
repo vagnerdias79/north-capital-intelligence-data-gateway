@@ -952,6 +952,7 @@ html,body{max-width:100%;overflow-x:hidden}.app,.main,.nci-dash{min-width:0;max-
 .or-decision-gate.review{border-color:#327441;background:#0a2112}.or-decision-gate.review b{color:#62df76}
 .or-decision-gate.wait{border-color:#70571f;background:#211908}.or-decision-gate.wait b{color:#efc157}
 .or-decision-gate.blocked{border-color:#713b32;background:#24110e}.or-decision-gate.blocked b{color:#ef8c76}
+.or-blocker-list{display:grid;gap:5px}.or-blocker-list p{display:grid;grid-template-columns:minmax(120px,.8fr) 1.2fr;gap:7px;border-top:1px solid rgba(255,255,255,.08);padding-top:5px}.or-blocker-list strong{font-size:8px;color:#ef9b87}.or-blocker-list em{font-size:8px;font-style:normal;color:#c7d1d7;line-height:1.35}
 @media(max-width:900px){.or-score-breakdown{grid-template-columns:repeat(2,minmax(0,1fr))}}
 </style>
 
@@ -3243,7 +3244,12 @@ for(const [key,a] of Object.entries(originAnchors)){
    valuationStatus:x.valuationStatus,
    dataComplete:dataComplete(x),
    buyScore:x.buyScore,
-   priceActionState:market?.priceActionState||'DATA_UNAVAILABLE'
+   priceActionState:market?.priceActionState||'DATA_UNAVAILABLE',
+   overlapStatus:x.overlapStatus,
+   missing:x.buyScoreDetails?.missing||[],
+   price:market?.price,
+   analystTargetPrice:x.fundamentals?.analystTargetPrice,
+   isHeld:DB.portfolio.some(p=>p.ticker===x.ticker)
  });
  const nextAction=x=>{
    if(x.stage==='DISCOVERY')return 'Completar tese, tamanho de mercado, competição, qualidade financeira e valuation inicial.';
@@ -3441,7 +3447,7 @@ Gates pendentes: ${pend}.`);
     <div class="or-market-note"><b>${marketMeta.text}</b><span>Fonte: ${market.source||'—'} · ${marketSignalsAsOf?new Date(marketSignalsAsOf).toLocaleString('pt-BR'):'aguardando sincronização'}. Decisão humana obrigatória.</span></div>
     <div class="or-decision-gate ${decision.tone}">
       <div><span>GATE 3.2 · FUNDAMENTOS + VALUATION</span><b>${decision.decision}</b></div>
-      <p>${decision.headline}</p>
+      ${decision.blockers?.length?`<div class="or-blocker-list">${decision.blockers.slice(0,3).map((b,i)=>`<p><strong>${i+1}. ${b.label}</strong><em>${b.detail}</em></p>`).join('')}</div>`:`<p>${decision.headline}</p>`}
       <small>Somente análise · promoção automática: NÃO · aporte autorizado: NÃO · escritas: BLOQUEADAS</small>
     </div>
     ${(()=>{const bd=x.buyScoreDetails||{},f=bd.factors||{},pc=v=>Number.isFinite(Number(v))?Number(v).toFixed(0):'—',up=Number.isFinite(Number(bd.upsideRaw))?(Number(bd.upsideRaw)*100).toFixed(1)+'%':'—';return `<div class="or-score-engine">
