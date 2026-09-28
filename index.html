@@ -2809,11 +2809,22 @@ for(const [key,a] of Object.entries(originAnchors)){
  const NCI_POSITION_ANCHOR=PORT.map(x=>structuredClone(x));
  const NCI_BASELINE_LEDGER_IDS=new Set(rows.map(x=>x.id));
  window.NCI_BASELINE_LEDGER_IDS=NCI_BASELINE_LEDGER_IDS;
+ const NCI_CONTROLLED_POST_BASELINE_LEDGER=[
+  {id:'nci-post-baseline-20260925-tflo-sell',date:'2026-09-25',type:'SELL',action:'SELL',ticker:'TFLO',value:100.00,qty:1.97433366,price:50.65,fee:0,source:'COMPROVANTE INTER',description:'Venda parcial executada às 16:39 para reciclagem de capital. Ordem a mercado por valor; taxa grátis.'},
+  {id:'nci-post-baseline-20260925-relx-buy',date:'2026-09-25',type:'BUY',action:'BUY',ticker:'RELX',value:60.00,qty:1.79111962,price:33.50,fee:0,source:'COMPROVANTE INTER',description:'Compra executada às 16:42. Ordem a mercado por valor; taxa grátis.'},
+  {id:'nci-post-baseline-20260925-spgi-buy',date:'2026-09-25',type:'BUY',action:'BUY',ticker:'SPGI',value:41.23,qty:.10232577,price:402.93,fee:0,source:'COMPROVANTE INTER',description:'Compra executada às 16:43. Compras do ciclo somaram US$ 101,23; diferença de US$ 1,23 coberta por saldo extra disponível na corretora; taxa grátis.'}
+ ];
+ const NCI_CONTROLLED_LEDGER_IDS=new Set(NCI_CONTROLLED_POST_BASELINE_LEDGER.map(x=>x.id));
+ const controlledEconomicKey=op=>[op.date,op.type||op.action,op.ticker,Number(op.qty).toFixed(8),Number(op.value).toFixed(2)].join('|');
+ const NCI_CONTROLLED_ECONOMIC_KEYS=new Set(NCI_CONTROLLED_POST_BASELINE_LEDGER.map(controlledEconomicKey));
+ NCI_CONTROLLED_POST_BASELINE_LEDGER.forEach(op=>rows.push(structuredClone(op)));
+ rows.sort((a,b)=>b.date.localeCompare(a.date)||String(b.id).localeCompare(String(a.id)));
+ window.NCI_CONTROLLED_LEDGER_IDS=NCI_CONTROLLED_LEDGER_IDS;
  const NCI_LEDGER_STORAGE_KEY='NCI_USD_LEDGER_DELTA_V1';
  try{
    const saved=JSON.parse(localStorage.getItem(NCI_LEDGER_STORAGE_KEY)||'[]');
    if(Array.isArray(saved))saved.forEach(op=>{
-     if(!op||!op.id||NCI_BASELINE_LEDGER_IDS.has(op.id)||rows.some(r=>r.id===op.id))return;
+     if(!op||!op.id||NCI_BASELINE_LEDGER_IDS.has(op.id)||rows.some(r=>r.id===op.id)||NCI_CONTROLLED_ECONOMIC_KEYS.has(controlledEconomicKey(op)))return;
      rows.push(op);
    });
    rows.sort((a,b)=>b.date.localeCompare(a.date)||String(b.id).localeCompare(String(a.id)));
@@ -2821,7 +2832,7 @@ for(const [key,a] of Object.entries(originAnchors)){
  window.NCI_LEDGER_COUNTS={buys:rows.filter(x=>x.type==='BUY').length,sells:rows.filter(x=>x.type==='SELL').length,dividends:rows.filter(x=>x.type==='DIVIDEND').length,taxes:rows.filter(x=>x.type==='TAX').length,contributions:rows.filter(x=>x.type==='CONTRIBUTION').length};
  function persistLedgerDelta(){
    try{
-     const delta=rows.filter(r=>!NCI_BASELINE_LEDGER_IDS.has(r.id));
+     const delta=rows.filter(r=>!NCI_BASELINE_LEDGER_IDS.has(r.id)&&!NCI_CONTROLLED_LEDGER_IDS.has(r.id));
      localStorage.setItem(NCI_LEDGER_STORAGE_KEY,JSON.stringify(delta));
    }catch(e){}
  }
@@ -2855,7 +2866,7 @@ for(const [key,a] of Object.entries(originAnchors)){
  function syncReadModel(){const next=derivePortfolio();PORT.splice(0,PORT.length,...next);DB.portfolio=PORT;syncLedgerCounts();refreshPortfolioTotals();try{window.renderPortfolio?.()}catch(e){}try{window.NCIDashboard?.render?.()}catch(e){}try{document.querySelector('#historyType')?.dispatchEvent(new Event('change'))}catch(e){}return PORT}
  function nextLedgerId(){return 'user-'+Date.now()+'-'+Math.random().toString(36).slice(2,8)}
  function applyOperation(op){const row={id:op.id||nextLedgerId(),date:op.date||new Date().toISOString().slice(0,10),type:normalizeType(op.type||op.action),action:normalizeType(op.type||op.action),ticker:op.ticker,value:Number(op.value)||0,qty:op.qty==null?null:Number(op.qty),price:op.price==null?null:Number(op.price),fee:Number(op.fee)||0,source:op.source||'LANÇAMENTO NCI',description:op.description||'',...op};row.type=normalizeType(row.type||row.action);row.action=row.type;rows.push(row);rows.sort((a,b)=>b.date.localeCompare(a.date)||String(b.id).localeCompare(String(a.id)));persistLedgerDelta();syncReadModel();return row}
- function removeOperation(id){const i=rows.findIndex(r=>r.id===id);if(i<0||NCI_BASELINE_LEDGER_IDS.has(id))return false;rows.splice(i,1);persistLedgerDelta();syncReadModel();return true}
+ function removeOperation(id){const i=rows.findIndex(r=>r.id===id);if(i<0||NCI_BASELINE_LEDGER_IDS.has(id)||NCI_CONTROLLED_LEDGER_IDS.has(id))return false;rows.splice(i,1);persistLedgerDelta();syncReadModel();return true}
  function setMarketPrice(ticker,price,asOf=DB.meta.asOf){if(!Number.isFinite(Number(price))||Number(price)<=0)return false;NCI_MARKET_SNAPSHOT[ticker]={price:Number(price),asOf};syncReadModel();return true}
  function portfolioMetrics(){const total=PORT.reduce((s,x)=>s+Number(x.qty||0)*Number(x.price||0),0),invested=PORT.reduce((s,x)=>s+Number(x.invested||0),0),cash=PORT.filter(x=>x.type==='Cash').reduce((s,x)=>s+Number(x.qty||0)*Number(x.price||0),0),equity=total-cash;return{total,invested,result:total-invested,cash,equity}}
  function stateFingerprint(){return JSON.stringify({portfolio:derivePortfolio(),ledger:rows,marketSnapshot:NCI_MARKET_SNAPSHOT})}
@@ -3079,6 +3090,7 @@ for(const [key,a] of Object.entries(originAnchors)){
  const ledger=window.NCI_LEDGER||[];
  const db=window.NCI_DATABASE;
  const baselineIds=window.NCI_BASELINE_LEDGER_IDS||new Set();
+ const controlledIds=window.NCI_CONTROLLED_LEDGER_IDS||new Set();
  const moneySafe=v=>v===null||v===''||!Number.isFinite(Number(v))?'—':money(Number(v));
  const qtySafe=v=>v===null||v===''||!Number.isFinite(Number(v))?'—':Number(v).toLocaleString('en-US',{maximumFractionDigits:8});
  const label=t=>({BUY:'COMPRA',SELL:'VENDA',DIVIDEND:'DIVIDENDO',TAX:'IMPOSTO',CONTRIBUTION:'APORTE'}[t]||t);
@@ -3109,8 +3121,8 @@ for(const [key,a] of Object.entries(originAnchors)){
    const type=root.querySelector('#historyType').value,q=root.querySelector('#historySearch').value.trim().toLowerCase();
    const rows=ledger.filter(x=>(!type||x.type===type)&&(!q||`${x.ticker} ${x.description} ${x.source} ${label(x.type)}`.toLowerCase().includes(q)));
    root.querySelector('#historyTable').innerHTML=`<table><thead><tr><th>Data</th><th>Ativo</th><th>Evento</th><th>Quantidade</th><th>Preço</th><th>Valor</th><th>Taxa</th><th>Origem / observação</th><th>Controle</th></tr></thead><tbody>${rows.map(x=>{
-     const immutable=baselineIds.has(x.id);
-     return `<tr><td>${String(x.date||'').split('-').reverse().join('/')}</td><td><b>${x.ticker}</b></td><td><span class="hs-event ${cls(x.type)}">${label(x.type)}</span></td><td>${qtySafe(x.qty)}</td><td>${moneySafe(x.price)}</td><td>${moneySafe(x.value)}</td><td>${moneySafe(x.fee)}</td><td><b class="hs-muted">${x.source||'—'}</b><br>${x.description||''}</td><td>${immutable?'<span class="hs-lock">BASELINE</span>':`<button class="hs-delete" data-remove="${x.id}">Excluir</button>`}</td></tr>`;
+     const baseline=baselineIds.has(x.id),controlled=controlledIds.has(x.id),immutable=baseline||controlled;
+     return `<tr><td>${String(x.date||'').split('-').reverse().join('/')}</td><td><b>${x.ticker}</b></td><td><span class="hs-event ${cls(x.type)}">${label(x.type)}</span></td><td>${qtySafe(x.qty)}</td><td>${moneySafe(x.price)}</td><td>${moneySafe(x.value)}</td><td>${moneySafe(x.fee)}</td><td><b class="hs-muted">${x.source||'—'}</b><br>${x.description||''}</td><td>${immutable?`<span class="hs-lock">${baseline?'BASELINE':'CONTROLADO'}</span>`:`<button class="hs-delete" data-remove="${x.id}">Excluir</button>`}</td></tr>`;
    }).join('')}</tbody></table>${rows.length?'':'<div class="hs-empty">Nenhum registro encontrado.</div>'}`;
    root.querySelectorAll('[data-remove]').forEach(b=>b.onclick=()=>{
      if(!confirm('Excluir este lançamento pós-baseline? A carteira será recalculada.'))return;
