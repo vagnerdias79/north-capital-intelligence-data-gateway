@@ -9,8 +9,10 @@ const approved={
 };
 
 test('blocks conclusions when fundamental data is incomplete',()=>{
-  const result=evaluate({...approved,dataComplete:false,priceActionState:'PULLBACK'});
+  const result=evaluate({...approved,dataComplete:false,missing:['qualidade','valuation'],priceActionState:'PULLBACK'});
   assert.equal(result.decision,'BLOCKED_DATA');
+  assert.equal(result.primaryBlocker.code,'DATA_INCOMPLETE');
+  assert.match(result.primaryBlocker.detail,/qualidade, valuation/);
   assert.equal(result.decisionAuthorization,false);
   assert.equal(result.writeOperationsEnabled,false);
 });
@@ -38,10 +40,24 @@ test('waits when price is extended even with approved fundamentals',()=>{
   assert.equal(evaluate({...approved,priceActionState:'SPIKE'}).decision,'WAIT_PRICE');
 });
 
+test('identifies price above analyst target as a concrete blocker',()=>{
+  const result=evaluate({...approved,price:210,analystTargetPrice:195});
+  assert.equal(result.blockers.some(x=>x.code==='TARGET_BELOW_MARKET'),true);
+  assert.match(result.blockers.find(x=>x.code==='TARGET_BELOW_MARKET').detail,/210\.00.*195\.00/);
+});
+
+test('uses exit review only for held assets with rejected thesis',()=>{
+  const held=evaluate({...approved,isHeld:true,thesisStatus:'REJECTED'});
+  const candidate=evaluate({...approved,isHeld:false,thesisStatus:'REJECTED'});
+  assert.equal(held.recommendedAction,'EXIT_REVIEW');
+  assert.equal(candidate.recommendedAction,'RESOLVE_BLOCKERS');
+});
+
 test('integrates the phase 3.2 decision gate into the Radar card',async()=>{
   const html=await readFile(new URL('../index.html',import.meta.url),'utf8');
   assert.match(html,/fundamentals-valuation-gate\.js/);
   assert.match(html,/GATE 3\.2 · FUNDAMENTOS \+ VALUATION/);
   assert.match(html,/aporte autorizado: NÃO/);
+  assert.match(html,/or-blocker-list/);
   assert.match(html,/decisionGate/);
 });
