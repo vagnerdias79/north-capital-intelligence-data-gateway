@@ -59,5 +59,8 @@ test('integrates the phase 3.2 decision gate into the Radar card',async()=>{
   assert.match(html,/GATE 3\.2 · FUNDAMENTOS \+ VALUATION/);
   assert.match(html,/aporte autorizado: NÃO/);
   assert.match(html,/or-blocker-list/);
+  assert.match(html,/\\.or-decision-gate>\\.or-blocker-list\\{display:grid;grid-template-columns:minmax\\(0,1fr\\)/);
+  assert.match(html,/\\.or-decision-gate small\\{display:block;font-size:8\\.5px/);
+  assert.match(html,/overflow-wrap:anywhere/);
   assert.match(html,/decisionGate/);
 });
