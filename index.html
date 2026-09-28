@@ -945,6 +945,13 @@ html,body{max-width:100%;overflow-x:hidden}.app,.main,.nci-dash{min-width:0;max-
 .or-score-factor small{display:block;font-size:7px;color:#6f808b;margin-top:2px}
 .or-score-engine-note{font-size:8px;color:#8998a2;line-height:1.45;margin-top:7px}
 .or-score-pending-note{color:#e0a05b}
+.or-decision-gate{margin-top:8px;border:1px solid #31566d;border-radius:7px;background:#071722;padding:8px;display:grid;gap:4px}
+.or-decision-gate>div{display:flex;justify-content:space-between;gap:8px}
+.or-decision-gate span,.or-decision-gate small{font-size:7px;color:#8fa0aa}
+.or-decision-gate b{font-size:8px;color:#72bce9}.or-decision-gate p{font-size:9px;line-height:1.35;margin:0;color:#dce6eb}
+.or-decision-gate.review{border-color:#327441;background:#0a2112}.or-decision-gate.review b{color:#62df76}
+.or-decision-gate.wait{border-color:#70571f;background:#211908}.or-decision-gate.wait b{color:#efc157}
+.or-decision-gate.blocked{border-color:#713b32;background:#24110e}.or-decision-gate.blocked b{color:#ef8c76}
 @media(max-width:900px){.or-score-breakdown{grid-template-columns:repeat(2,minmax(0,1fr))}}
 </style>
 
@@ -3165,6 +3172,7 @@ for(const [key,a] of Object.entries(originAnchors)){
  };
 })();
 </script>
+<script type="module">import gate from '/lib/radar/fundamentals-valuation-gate.js';window.NCIFundamentalsValuationGate=gate;</script>
 <script id="nci-radar-v2-runtime">(()=>{
  const root=document.querySelector('#radar');
  const wideRoot=document.querySelector('#radarWideZone');
@@ -3218,6 +3226,13 @@ for(const [key,a] of Object.entries(originAnchors)){
    ['NCI Buy Score',Number(x.buyScore)>=60?'APROVADA':'BLOQUEADO',Number.isFinite(Number(x.buyScore))?`Buy Score ${x.buyScore}/100 · mínimo 60`:'Buy Score pendente']
  ];
  const allGatesApproved=x=>gates(x).every(g=>g[1]==='APROVADA');
+ const decisionGate=(x,market)=>(window.NCIFundamentalsValuationGate?.evaluate||(()=>({decision:'BLOCKED_DATA',tone:'blocked',headline:'Gate em inicialização.',decisionAuthorization:false,writeOperationsEnabled:false})))({
+   thesisStatus:x.thesisStatus,
+   valuationStatus:x.valuationStatus,
+   dataComplete:dataComplete(x),
+   buyScore:x.buyScore,
+   priceActionState:market?.priceActionState||'DATA_UNAVAILABLE'
+ });
  const nextAction=x=>{
    if(x.stage==='DISCOVERY')return 'Completar tese, tamanho de mercado, competição, qualidade financeira e valuation inicial.';
    if(x.stage==='UNDER REVIEW')return 'Fechar gates pendentes e definir faixa de entrada antes de promoção.';
@@ -3399,6 +3414,7 @@ Gates pendentes: ${pend}.`);
    const gs=gates(x),d=dueState(x),c=composite(x);
    const market=marketSignals.get(x.ticker)||{priceActionState:'DATA_UNAVAILABLE',price:null,source:null};
    const marketMeta=MARKET_SIGNAL_META[market.priceActionState]||MARKET_SIGNAL_META.DATA_UNAVAILABLE;
+   const decision=decisionGate(x,market);
    return`<article class="or-panel or-detail"><div class="or-heading"><div><h2>Ficha decisória</h2><p>Análise, estágio, freshness e próxima ação.</p></div><span class="or-seal">${STAGE_LABEL[x.stage].toUpperCase()}</span></div>
     <div class="or-detail-top"><div><h3>${x.ticker}</h3><div class="or-category">${x.name} · ${x.sector||x.category}</div></div><div class="or-detail-score"><span>ÍNDICE NCI</span><strong>${c==null?'—':c.toFixed(1)}</strong></div></div>
     <p class="or-thesis">${x.why||'Tese ainda não documentada.'}</p>
@@ -3411,6 +3427,11 @@ Gates pendentes: ${pend}.`);
       <div class="or-fact"><span>Market Timing · PRICE ONLY</span><b><i class="or-market-signal ${marketMeta.cls}">${marketMeta.label}</i></b></div>
     </div>
     <div class="or-market-note"><b>${marketMeta.text}</b><span>Fonte: ${market.source||'—'} · ${marketSignalsAsOf?new Date(marketSignalsAsOf).toLocaleString('pt-BR'):'aguardando sincronização'}. Decisão humana obrigatória.</span></div>
+    <div class="or-decision-gate ${decision.tone}">
+      <div><span>GATE 3.2 · FUNDAMENTOS + VALUATION</span><b>${decision.decision}</b></div>
+      <p>${decision.headline}</p>
+      <small>Somente análise · promoção automática: NÃO · aporte autorizado: NÃO · escritas: BLOQUEADAS</small>
+    </div>
     ${(()=>{const bd=x.buyScoreDetails||{},f=bd.factors||{},pc=v=>Number.isFinite(Number(v))?Number(v).toFixed(0):'—',up=Number.isFinite(Number(bd.upsideRaw))?(Number(bd.upsideRaw)*100).toFixed(1)+'%':'—';return `<div class="or-score-engine">
       <div class="or-score-engine-head"><b>NCI BUY SCORE v1.1 · FROZEN</b><span>Completude ${(Number(bd.completeness||0)*100).toFixed(0)}%</span></div>
       <div class="or-score-breakdown">
@@ -3461,7 +3482,7 @@ Gates pendentes: ${pend}.`);
     <div class="or-suggestions-list">${suggestions().map(s=>`<div class="or-suggestion ${s.urgent?'urgent':''}"><b>${s.title}</b><span>${s.text}</span></div>`).join('')}</div>
    </article>`;
  }
- window.NCIRadar={...(window.NCIRadar||{}),render,updateRadarSignals,gates,allGatesApproved,dataComplete};
+ window.NCIRadar={...(window.NCIRadar||{}),render,updateRadarSignals,gates,allGatesApproved,dataComplete,decisionGate};
  async function refreshMarketSignals(){
    try{
      const tickers=RADAR.map(x=>x.ticker).filter(Boolean).join(',');
