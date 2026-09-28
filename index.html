@@ -945,14 +945,14 @@ html,body{max-width:100%;overflow-x:hidden}.app,.main,.nci-dash{min-width:0;max-
 .or-score-factor small{display:block;font-size:7px;color:#6f808b;margin-top:2px}
 .or-score-engine-note{font-size:8px;color:#8998a2;line-height:1.45;margin-top:7px}
 .or-score-pending-note{color:#e0a05b}
-.or-decision-gate{margin-top:8px;border:1px solid #31566d;border-radius:7px;background:#071722;padding:8px;display:grid;gap:4px}
-.or-decision-gate>div{display:flex;justify-content:space-between;gap:8px}
-.or-decision-gate span,.or-decision-gate small{font-size:7px;color:#8fa0aa}
-.or-decision-gate b{font-size:8px;color:#72bce9}.or-decision-gate p{font-size:9px;line-height:1.35;margin:0;color:#dce6eb}
+.or-decision-gate{margin-top:8px;border:1px solid #31566d;border-radius:7px;background:#071722;padding:9px;display:grid;gap:7px;min-width:0;overflow:hidden}
+.or-decision-gate>div:first-child{display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:5px 8px;min-width:0}
+.or-decision-gate span{font-size:8px;color:#8fa0aa}.or-decision-gate small{display:block;font-size:8.5px;line-height:1.45;color:#aebbc4;overflow-wrap:anywhere}
+.or-decision-gate b{font-size:9px;color:#72bce9}.or-decision-gate p{font-size:9px;line-height:1.4;margin:0;color:#dce6eb}
 .or-decision-gate.review{border-color:#327441;background:#0a2112}.or-decision-gate.review b{color:#62df76}
 .or-decision-gate.wait{border-color:#70571f;background:#211908}.or-decision-gate.wait b{color:#efc157}
 .or-decision-gate.blocked{border-color:#713b32;background:#24110e}.or-decision-gate.blocked b{color:#ef8c76}
-.or-blocker-list{display:grid;gap:5px}.or-blocker-list p{display:grid;grid-template-columns:minmax(120px,.8fr) 1.2fr;gap:7px;border-top:1px solid rgba(255,255,255,.08);padding-top:5px}.or-blocker-list strong{font-size:8px;color:#ef9b87}.or-blocker-list em{font-size:8px;font-style:normal;color:#c7d1d7;line-height:1.35}
+.or-decision-gate>.or-blocker-list{display:grid;grid-template-columns:minmax(0,1fr);gap:7px;min-width:0}.or-decision-gate>.or-blocker-list p{display:grid;grid-template-columns:minmax(0,1fr);gap:3px;border-top:1px solid rgba(255,255,255,.10);padding-top:7px;min-width:0;overflow-wrap:anywhere}.or-blocker-list strong{display:block;font-size:9px;line-height:1.35;color:#ff9c86}.or-blocker-list em{display:block;font-size:9px;font-style:normal;color:#d3dce1;line-height:1.4;overflow-wrap:anywhere}
 @media(max-width:900px){.or-score-breakdown{grid-template-columns:repeat(2,minmax(0,1fr))}}
 </style>
 
