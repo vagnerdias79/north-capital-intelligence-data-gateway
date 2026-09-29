@@ -57,6 +57,7 @@ test('API and Radar expose the audited provenance contract',async()=>{
   assert.match(html,/localStorage\.removeItem\(FUND_CACHE_KEY\)/);
   assert.match(html,/i\+=3/);
   assert.match(html,/TRANSPORT_TIMEOUT:'timeout da consulta'/);
+  assert.match(html,/PROVIDER_NOT_CONFIGURED:'provedor não configurado'/);
 });
 
 test('requires a dated reference before an approved valuation can pass',()=>{
