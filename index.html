@@ -4562,7 +4562,7 @@ Gates pendentes: ${pend}.`);
      }
      const missingRows=Math.max(0,radar.length-rows.length);
      failed+=missingRows;
-     if(missingRows)addReason(data.rateLimited?'PROVIDER_LIMIT':'NO_RESPONSE');
+     if(missingRows)addReason(!data.configured?'PROVIDER_NOT_CONFIGURED':data.rateLimited?'PROVIDER_LIMIT':'NO_RESPONSE');
      const cacheable=data?.complete===true&&rows.length===radar.length&&rows.every(row=>
        row?.ok&&row?.provenance?.schemaVersion==='NCI_FUNDAMENTALS_PROVENANCE_V1'
      );
@@ -4652,12 +4652,13 @@ Gates pendentes: ${pend}.`);
          ?'fundamentos '+fundamental.updated+' verificados · '+Number(fundamental.failed||0)+' pendentes'+(fundamental.dominantReason?' ('+({
            PROVIDER_LIMIT:'limite do provedor',PROVIDER_ERROR:'erro do provedor',UNKNOWN_DATE:'período não informado',
            STALE_PERIOD:'período contábil vencido',STALE_RETRIEVAL:'consulta vencida',INCOMPLETE:'dados incompletos',
-           NO_RESPONSE:'sem resposta'
+           NO_RESPONSE:'sem resposta',PROVIDER_NOT_CONFIGURED:'provedor não configurado'
          }[fundamental.dominantReason]||fundamental.dominantReason)+')':'')
          :'fundamentos 0 verificados · '+Number(fundamental.failed||0)+' pendentes'+(fundamental.dominantReason?' ('+({
            PROVIDER_LIMIT:'limite do provedor',PROVIDER_ERROR:'erro do provedor',UNKNOWN_DATE:'período não informado',
            STALE_PERIOD:'período contábil vencido',STALE_RETRIEVAL:'consulta vencida',INCOMPLETE:'dados incompletos',
-           NO_RESPONSE:'sem resposta',TRANSPORT_TIMEOUT:'timeout da consulta',HTTP_ERROR:'erro HTTP',
+           NO_RESPONSE:'sem resposta',PROVIDER_NOT_CONFIGURED:'provedor não configurado',
+           TRANSPORT_TIMEOUT:'timeout da consulta',HTTP_ERROR:'erro HTTP',
            TRANSPORT_ERROR:'falha de comunicação'
          }[fundamental.dominantReason]||fundamental.dominantReason)+')':'');
 
