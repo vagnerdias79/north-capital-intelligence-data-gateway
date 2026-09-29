@@ -4511,7 +4511,13 @@ Gates pendentes: ${pend}.`);
    try{
      const prev=JSON.parse(localStorage.getItem(FUND_CACHE_KEY)||'null');
      const fresh=prev?.at && (Date.now()-new Date(prev.at).getTime()) < 20*60*60*1000;
-     if(fresh && Array.isArray(prev.rows)){
+     const auditableCache=Array.isArray(prev?.rows)&&prev.rows.length>0&&prev.rows.every(row=>
+       !row?.ok||(
+         row?.provenance?.schemaVersion==='NCI_FUNDAMENTALS_PROVENANCE_V1'&&
+         row?.provenance?.provider&&row?.provenance?.retrievedAt&&row?.provenance?.sourcePeriodEnd
+       )
+     );
+     if(fresh && auditableCache){
        let restored=0;
        for(const row of prev.rows){
          const x=radar.find(r=>r.ticker===row.ticker);
@@ -4520,7 +4526,9 @@ Gates pendentes: ${pend}.`);
        recalculateRadarBuyScores();
        return{status:'CACHED',updated:restored,failed:radar.length-restored,configured:true,source:'Alpha Vantage'};
      }
-     const data=await backendJSON('https://north-capital-intelligence-data-gat.vercel.app/api/fundamentals?symbols='+encodeURIComponent(radar.map(x=>x.ticker).join(',')),45000);
+     // Same-origin is mandatory: Preview must validate the API contract from the
+     // exact deployment under review, not silently reuse the Production API.
+     const data=await backendJSON('/api/fundamentals?symbols='+encodeURIComponent(radar.map(x=>x.ticker).join(',')),45000);
      const rows=Array.isArray(data?.fundamentals)?data.fundamentals:[];
      let updated=0,failed=0;
      for(const row of rows){
