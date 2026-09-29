@@ -4528,8 +4528,23 @@ Gates pendentes: ${pend}.`);
      }
      // Same-origin is mandatory: Preview must validate the API contract from the
      // exact deployment under review, not silently reuse the Production API.
-     const data=await backendJSON('/api/fundamentals?symbols='+encodeURIComponent(radar.map(x=>x.ticker).join(',')),45000);
-     const rows=Array.isArray(data?.fundamentals)?data.fundamentals:[];
+     const tickers=radar.map(x=>x.ticker);
+     const batches=[];
+     for(let i=0;i<tickers.length;i+=3)batches.push(tickers.slice(i,i+3));
+     const rows=[];
+     let data={configured:true,source:'Alpha Vantage',asOf:new Date().toISOString(),complete:true,rateLimited:false};
+     for(const batch of batches){
+       const part=await backendJSON('/api/fundamentals?symbols='+encodeURIComponent(batch.join(',')),20000);
+       data={
+         configured:data.configured&&!!part?.configured,
+         source:part?.source||data.source,
+         asOf:part?.asOf||data.asOf,
+         complete:data.complete&&part?.complete===true,
+         rateLimited:data.rateLimited||part?.rateLimited===true
+       };
+       if(Array.isArray(part?.fundamentals))rows.push(...part.fundamentals);
+       if(part?.rateLimited)break;
+     }
      let updated=0,failed=0;
      const pendingReasons={};
      const addReason=reason=>{const key=String(reason||'PROVIDER_ERROR');pendingReasons[key]=(pendingReasons[key]||0)+1};
@@ -4547,7 +4562,7 @@ Gates pendentes: ${pend}.`);
      }
      const missingRows=Math.max(0,radar.length-rows.length);
      failed+=missingRows;
-     if(missingRows)addReason('NO_RESPONSE');
+     if(missingRows)addReason(data.rateLimited?'PROVIDER_LIMIT':'NO_RESPONSE');
      const cacheable=data?.complete===true&&rows.length===radar.length&&rows.every(row=>
        row?.ok&&row?.provenance?.schemaVersion==='NCI_FUNDAMENTALS_PROVENANCE_V1'
      );
@@ -4560,7 +4575,10 @@ Gates pendentes: ${pend}.`);
      const dominantReason=Object.entries(pendingReasons).sort((a,b)=>b[1]-a[1])[0]?.[0]||null;
      return{status:data?.configured?(failed?'PARTIAL':'OK'):'PENDING',updated,failed,configured:!!data?.configured,source:data?.source||null,pendingReasons,dominantReason};
    }catch(e){
-     return{status:'PENDING',updated:0,failed:radar.length,configured:false,error:String(e?.message||e)};
+     const message=String(e?.message||e);
+     const dominantReason=/abort|timeout/i.test(message)?'TRANSPORT_TIMEOUT':/HTTP/i.test(message)?'HTTP_ERROR':'TRANSPORT_ERROR';
+     try{localStorage.removeItem(FUND_CACHE_KEY)}catch(_){}
+     return{status:'PENDING',updated:0,failed:radar.length,configured:false,error:message,dominantReason};
    }
  }
 
@@ -4636,7 +4654,12 @@ Gates pendentes: ${pend}.`);
            STALE_PERIOD:'período contábil vencido',STALE_RETRIEVAL:'consulta vencida',INCOMPLETE:'dados incompletos',
            NO_RESPONSE:'sem resposta'
          }[fundamental.dominantReason]||fundamental.dominantReason)+')':'')
-         :'fundamentos 0 verificados · '+Number(fundamental.failed||0)+' pendentes';
+         :'fundamentos 0 verificados · '+Number(fundamental.failed||0)+' pendentes'+(fundamental.dominantReason?' ('+({
+           PROVIDER_LIMIT:'limite do provedor',PROVIDER_ERROR:'erro do provedor',UNKNOWN_DATE:'período não informado',
+           STALE_PERIOD:'período contábil vencido',STALE_RETRIEVAL:'consulta vencida',INCOMPLETE:'dados incompletos',
+           NO_RESPONSE:'sem resposta',TRANSPORT_TIMEOUT:'timeout da consulta',HTTP_ERROR:'erro HTTP',
+           TRANSPORT_ERROR:'falha de comunicação'
+         }[fundamental.dominantReason]||fundamental.dominantReason)+')':'');
 
      if(market.ok===market.total&&market.total>0){
        setButton((fundamental.status==='OK'||fundamental.status==='CACHED')?'nci-ok':'nci-warn','✓ '+priceText+' · '+fundText);
