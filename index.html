@@ -3283,9 +3283,10 @@ for(const [key,a] of Object.entries(originAnchors)){
    }
  };
  const entryPolicy=x=>NCI_ENTRY_POLICIES[x?.ticker]||null;
+ const valuationVerified=x=>['ATTRACTIVE','FAIR'].includes(String(x?.valuationStatus||'').toUpperCase())&&x?.valuationProvenance?.eligible===true;
  const gates=x=>[
    ['Tese',gateState(x.thesisStatus,['VALID']),x.thesisStatus==='VALID'?'Tese validada':'Aprofundar tese e diferenciais'],
-   ['Valuation',gateState(x.valuationStatus,['ATTRACTIVE','FAIR']),['ATTRACTIVE','FAIR'].includes(x.valuationStatus)?'Valuation aprovado':entryPolicy(x)?'Faixa já registrada; confirmar valuation':'Definir retorno esperado e faixa de entrada'],
+   ['Valuation',valuationVerified(x)?'APROVADA':'PENDENTE',valuationVerified(x)?'Valuation aprovado com referência auditável':entryPolicy(x)?'Faixa já registrada; confirmar valuation e referência':'Definir retorno esperado, faixa de entrada e referência'],
    ['Sobreposição',gateState(x.overlapStatus,['PASS']),x.overlapStatus==='BLOCK'?'Redundância estratégica detectada':'Checar exposição direta e via ETFs'],
    ['Dados',dataComplete(x)?'APROVADA':'PENDENTE',dataComplete(x)?'Fundamentos + mercado atuais e suficientes':'Atualizar fundamentos, preço ou campos essenciais'],
    ['NCI Buy Score',x.buyScore==null||x.buyScore===''?'PENDENTE':Number(x.buyScore)>=60?'APROVADA':'BLOQUEADO',x.buyScore!=null&&x.buyScore!==''&&Number.isFinite(Number(x.buyScore))?`Buy Score ${x.buyScore}/100 · mínimo 60`:'Buy Score pendente']
@@ -3293,7 +3294,7 @@ for(const [key,a] of Object.entries(originAnchors)){
  const allGatesApproved=x=>gates(x).every(g=>g[1]==='APROVADA');
  const decisionGate=(x,market)=>(window.NCIFundamentalsValuationGate?.evaluate||(()=>({decision:'BLOCKED_DATA',tone:'blocked',headline:'Gate em inicialização.',decisionAuthorization:false,writeOperationsEnabled:false})))({
    thesisStatus:x.thesisStatus,
-   valuationStatus:x.valuationStatus,
+   valuationStatus:valuationVerified(x)?x.valuationStatus:'PENDING',
    dataComplete:dataComplete(x),
    buyScore:x.buyScore,
    priceActionState:market?.priceActionState||'DATA_UNAVAILABLE',
@@ -3315,7 +3316,7 @@ for(const [key,a] of Object.entries(originAnchors)){
  function saveState(){
    localStorage.setItem('nci_opportunity_radar_v3',JSON.stringify(RADAR.map(x=>({
      ticker:x.ticker,stage:x.stage,priorityBand:x.priorityBand,lastReview:x.lastReview,reviewDays:x.reviewDays,
-     thesisStatus:x.thesisStatus,valuationStatus:x.valuationStatus,overlapStatus:x.overlapStatus,manualPromotionAt:x.manualPromotionAt||null
+     thesisStatus:x.thesisStatus,valuationStatus:x.valuationStatus,valuationProvenance:x.valuationProvenance||null,overlapStatus:x.overlapStatus,manualPromotionAt:x.manualPromotionAt||null
    }))));
  }
  function restoreState(){
@@ -3476,7 +3477,14 @@ Gates pendentes: ${pend}.`);
    wideRoot.querySelectorAll('[data-gate-field]').forEach(sel=>sel.onchange=e=>{
      const x=RADAR.find(r=>r.ticker===e.target.dataset.gateTicker);
      if(!x)return;
-     x[e.target.dataset.gateField]=e.target.value;
+     const field=e.target.dataset.gateField,value=e.target.value,previous=x[field];
+     if(field==='valuationStatus'&&['ATTRACTIVE','FAIR'].includes(value)){
+       const reference=prompt('Informe a referência do valuation (fonte, modelo ou revisão e data).');
+       if(!reference||reference.trim().length<8){e.target.value=previous;return;}
+       const input={status:value,method:'HUMAN_REVIEW',reference:reference.trim(),assessedAt:new Date().toISOString()};
+       x.valuationProvenance=window.NCIFundamentalsProvenance?.evaluateValuation?.(input)||{...input,status:'VALIDATOR_UNAVAILABLE',eligible:false};
+     }else if(field==='valuationStatus')x.valuationProvenance={status:'NOT_APPROVED',eligible:false,valuationStatus:value,method:'HUMAN_REVIEW',reference:'',assessedAt:new Date().toISOString()};
+     x[field]=value;
      saveState();render();updateRadarSignals();
    });
 
@@ -3498,7 +3506,7 @@ Gates pendentes: ${pend}.`);
       <div class="or-fact"><span>Market Timing · PRICE ONLY</span><b><i class="or-market-signal ${marketMeta.cls}">${marketMeta.label}</i></b></div>
     </div>
     <div class="or-market-note"><b>${marketMeta.text}</b><span>Fonte: ${market.source||'—'} · ${marketSignalsAsOf?new Date(marketSignalsAsOf).toLocaleString('pt-BR'):'aguardando sincronização'}. Decisão humana obrigatória.</span></div>
-    ${(()=>{const p=x.fundamentalsProvenance||{},verified=p.eligible===true;return `<div class="or-provenance ${verified?'verified':'pending'}"><div><b>DADOS FUNDAMENTAIS · ${verified?'VERIFICADOS':(p.status||'PENDENTES')}</b><span>${p.provider||x.fundamentals?.provider||'fonte não confirmada'}</span></div><small>Consulta: ${p.retrievedAt?new Date(p.retrievedAt).toLocaleString('pt-BR'):'—'} · Período reportado: ${p.sourcePeriodEnd?String(p.sourcePeriodEnd).split('-').reverse().join('/'):'não informado'} · Escritas: BLOQUEADAS</small></div>`})()}
+    ${(()=>{const p=x.fundamentalsProvenance||{},v=x.valuationProvenance||{},verified=p.eligible===true,vVerified=v.eligible===true;return `<div class="or-provenance ${verified&&vVerified?'verified':'pending'}"><div><b>FUNDAMENTOS · ${verified?'VERIFICADOS':(p.status||'PENDENTES')}</b><span>${p.provider||x.fundamentals?.provider||'fonte não confirmada'}</span></div><small>Consulta: ${p.retrievedAt?new Date(p.retrievedAt).toLocaleString('pt-BR'):'—'} · Período reportado: ${p.sourcePeriodEnd?String(p.sourcePeriodEnd).split('-').reverse().join('/'):'não informado'}</small><small>Valuation: ${vVerified?'VERIFICADO':(v.status||'REFERÊNCIA PENDENTE')} · ${v.reference||'nenhuma referência registrada'} · Escritas: BLOQUEADAS</small></div>`})()}
     <div class="or-decision-gate ${decision.tone}">
       <div><span>GATE 3.2 · FUNDAMENTOS + VALUATION</span><b>${decision.decision}</b></div>
       ${decision.blockers?.length?`<div class="or-blocker-list">${decision.blockers.slice(0,3).map((b,i)=>`<p><strong>${i+1}. ${b.label}</strong><em>${b.detail}</em></p>`).join('')}</div>`:`<p>${decision.headline}</p>`}
@@ -3540,7 +3548,7 @@ Gates pendentes: ${pend}.`);
     <div class="or-entry-levels">
      ${policy.levels.map((level,i)=>`<div class="or-entry-level"><small>NÍVEL ${i+1}</small><b>≤ US$ ${level.max.toLocaleString('en-US')}</b><span>${level.label}</span></div>`).join('')}
     </div>
-    <div class="or-entry-status"><b>Status atual: ${distance!==null&&distance>0?`cotação ${(distance*100).toFixed(1).replace('.',',')}% acima do Nível 1`:'preço dentro da faixa monitorada'}.</b> Tese ${thesisValid?'validada':'ainda em validação'}; valuation ${['ATTRACTIVE','FAIR'].includes(String(x.valuationStatus||'').toUpperCase())?'aprovado':'pendente de confirmação'}. Decisão registrada em ${policy.decidedAt.split('-').reverse().join('/')}.</div>
+    <div class="or-entry-status"><b>Status atual: ${distance!==null&&distance>0?`cotação ${(distance*100).toFixed(1).replace('.',',')}% acima do Nível 1`:'preço dentro da faixa monitorada'}.</b> Tese ${thesisValid?'validada':'ainda em validação'}; valuation ${valuationVerified(x)?'aprovado com referência':'pendente de confirmação auditável'}. Decisão registrada em ${policy.decidedAt.split('-').reverse().join('/')}.</div>
    </article>`;
  }
 
