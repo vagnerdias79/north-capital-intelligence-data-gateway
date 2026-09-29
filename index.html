@@ -4511,8 +4511,8 @@ Gates pendentes: ${pend}.`);
    try{
      const prev=JSON.parse(localStorage.getItem(FUND_CACHE_KEY)||'null');
      const fresh=prev?.at && (Date.now()-new Date(prev.at).getTime()) < 20*60*60*1000;
-     const auditableCache=Array.isArray(prev?.rows)&&prev.rows.length>0&&prev.rows.every(row=>
-       !row?.ok||(
+     const auditableCache=Array.isArray(prev?.rows)&&prev.rows.length===radar.length&&prev.rows.every(row=>
+       row?.ok&&(
          row?.provenance?.schemaVersion==='NCI_FUNDAMENTALS_PROVENANCE_V1'&&
          row?.provenance?.provider&&row?.provenance?.retrievedAt&&row?.provenance?.sourcePeriodEnd
        )
@@ -4531,17 +4531,34 @@ Gates pendentes: ${pend}.`);
      const data=await backendJSON('/api/fundamentals?symbols='+encodeURIComponent(radar.map(x=>x.ticker).join(',')),45000);
      const rows=Array.isArray(data?.fundamentals)?data.fundamentals:[];
      let updated=0,failed=0;
+     const pendingReasons={};
+     const addReason=reason=>{const key=String(reason||'PROVIDER_ERROR');pendingReasons[key]=(pendingReasons[key]||0)+1};
      for(const row of rows){
        const x=radar.find(r=>r.ticker===row.ticker);
        if(!x)continue;
-       if(row.ok&&applyFundamentalsRow(x,row,data.asOf))updated++;else failed++;
+       if(row.ok&&applyFundamentalsRow(x,row,data.asOf))updated++;
+       else{
+         failed++;
+         const reason=row.rateLimited?'PROVIDER_LIMIT':(row.ok?(x.dataStatus||'NOT_VERIFIED'):'PROVIDER_ERROR');
+         x.dataStatus=reason;
+         x.fundamentalsSyncError=row.error||null;
+         addReason(reason);
+       }
      }
-     failed+=Math.max(0,radar.length-rows.length);
-     if(data?.configured && rows.length){
+     const missingRows=Math.max(0,radar.length-rows.length);
+     failed+=missingRows;
+     if(missingRows)addReason('NO_RESPONSE');
+     const cacheable=data?.complete===true&&rows.length===radar.length&&rows.every(row=>
+       row?.ok&&row?.provenance?.schemaVersion==='NCI_FUNDAMENTALS_PROVENANCE_V1'
+     );
+     if(data?.configured && cacheable){
        try{localStorage.setItem(FUND_CACHE_KEY,JSON.stringify({at:data.asOf||new Date().toISOString(),rows}))}catch(e){}
+     }else{
+       try{localStorage.removeItem(FUND_CACHE_KEY)}catch(e){}
      }
      recalculateRadarBuyScores();
-     return{status:data?.configured?(failed?'PARTIAL':'OK'):'PENDING',updated,failed,configured:!!data?.configured,source:data?.source||null};
+     const dominantReason=Object.entries(pendingReasons).sort((a,b)=>b[1]-a[1])[0]?.[0]||null;
+     return{status:data?.configured?(failed?'PARTIAL':'OK'):'PENDING',updated,failed,configured:!!data?.configured,source:data?.source||null,pendingReasons,dominantReason};
    }catch(e){
      return{status:'PENDING',updated:0,failed:radar.length,configured:false,error:String(e?.message||e)};
    }
@@ -4614,7 +4631,11 @@ Gates pendentes: ${pend}.`);
      const fundText=(fundamental.status==='OK'||fundamental.status==='CACHED')
        ?'fundamentos '+fundamental.updated+' verificados'+(fundamental.status==='CACHED'?' em cache':'')
        :fundamental.status==='PARTIAL'
-         ?'fundamentos '+fundamental.updated+' verificados · '+Number(fundamental.failed||0)+' pendentes'
+         ?'fundamentos '+fundamental.updated+' verificados · '+Number(fundamental.failed||0)+' pendentes'+(fundamental.dominantReason?' ('+({
+           PROVIDER_LIMIT:'limite do provedor',PROVIDER_ERROR:'erro do provedor',UNKNOWN_DATE:'período não informado',
+           STALE_PERIOD:'período contábil vencido',STALE_RETRIEVAL:'consulta vencida',INCOMPLETE:'dados incompletos',
+           NO_RESPONSE:'sem resposta'
+         }[fundamental.dominantReason]||fundamental.dominantReason)+')':'')
          :'fundamentos 0 verificados · '+Number(fundamental.failed||0)+' pendentes';
 
      if(market.ok===market.total&&market.total>0){
