@@ -4604,10 +4604,10 @@ Gates pendentes: ${pend}.`);
      const priceText='Mercado '+market.ok+'/'+market.total;
      const sourceText=sourceLabel(market.sources);
      const fundText=(fundamental.status==='OK'||fundamental.status==='CACHED')
-       ?'fundamentos '+fundamental.updated+(fundamental.status==='CACHED'?' em cache':'')
+       ?'fundamentos '+fundamental.updated+' verificados'+(fundamental.status==='CACHED'?' em cache':'')
        :fundamental.status==='PARTIAL'
-         ?'fundamentos '+fundamental.updated+' parciais'
-         :'fundamentos pendentes';
+         ?'fundamentos '+fundamental.updated+' verificados · '+Number(fundamental.failed||0)+' pendentes'
+         :'fundamentos 0 verificados · '+Number(fundamental.failed||0)+' pendentes';
 
      if(market.ok===market.total&&market.total>0){
        setButton((fundamental.status==='OK'||fundamental.status==='CACHED')?'nci-ok':'nci-warn','✓ '+priceText+' · '+fundText);
