@@ -47,6 +47,7 @@ test('API and Radar expose the audited provenance contract',async()=>{
   assert.match(html,/valuationVerified/);
   assert.match(html,/evaluateValuation/);
   assert.match(html,/REFERÊNCIA PENDENTE/);
+  assert.match(html,/verificados ·.*pendentes/);
 });
 
 test('requires a dated reference before an approved valuation can pass',()=>{
