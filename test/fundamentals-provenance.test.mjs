@@ -48,6 +48,9 @@ test('API and Radar expose the audited provenance contract',async()=>{
   assert.match(html,/evaluateValuation/);
   assert.match(html,/REFERÊNCIA PENDENTE/);
   assert.match(html,/verificados ·.*pendentes/);
+  assert.match(html,/row\?\.provenance\?\.schemaVersion==='NCI_FUNDAMENTALS_PROVENANCE_V1'/);
+  assert.match(html,/backendJSON\('\/api\/fundamentals\?symbols='/);
+  assert.doesNotMatch(html,/backendJSON\('https:\/\/north-capital-intelligence-data-gat\.vercel\.app\/api\/fundamentals/);
 });
 
 test('requires a dated reference before an approved valuation can pass',()=>{
