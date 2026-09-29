@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
-import { evaluate } from '../lib/radar/fundamentals-provenance.js';
+import { evaluate, evaluateValuation } from '../lib/radar/fundamentals-provenance.js';
 
 const data={
   profitMargin:.21,operatingMargin:.28,returnOnEquity:.34,
@@ -44,5 +44,15 @@ test('API and Radar expose the audited provenance contract',async()=>{
   assert.match(html,/fundamentals-provenance\.js/);
   assert.match(html,/applyFundamentalsRow/);
   assert.match(html,/fundamentalsProvenance\?\.eligible===true/);
-  assert.match(html,/DADOS FUNDAMENTAIS ·/);
+  assert.match(html,/valuationVerified/);
+  assert.match(html,/evaluateValuation/);
+  assert.match(html,/REFERÊNCIA PENDENTE/);
+});
+
+test('requires a dated reference before an approved valuation can pass',()=>{
+  const verified=evaluateValuation({status:'FAIR',method:'HUMAN_REVIEW',reference:'NCI review 2026-09-29',assessedAt:'2026-09-29T10:00:00Z'},{now});
+  assert.equal(verified.status,'VERIFIED');
+  assert.equal(verified.eligible,true);
+  assert.equal(evaluateValuation({status:'FAIR',method:'HUMAN_REVIEW',reference:'',assessedAt:'2026-09-29T10:00:00Z'},{now}).status,'REFERENCE_REQUIRED');
+  assert.equal(evaluateValuation({status:'FAIR',method:'HUMAN_REVIEW',reference:'old review',assessedAt:'2026-07-01'},{now}).status,'STALE_REVIEW');
 });
