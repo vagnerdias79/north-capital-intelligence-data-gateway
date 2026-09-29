@@ -2346,7 +2346,21 @@ html+='</defs>';const project=([lon,lat])=>[(lon+180)*2,(85-lat)*2],pointTone={u
 for(const [key,a] of Object.entries(originAnchors)){
   const [x,y]=project([a.lon,a.lat]);
   html+=`<circle class="geo-origin geo-origin-${key}" cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="3.2" fill="${pointTone[key]}" fill-opacity="1" stroke="${pointTone[key]}" stroke-opacity=".98" stroke-width="1.15" filter="url(#point-glow-${key})"/>`;
-}svg.innerHTML=html;$('#nativeGeoLabels').innerHTML=state.geography.filter(g=>g.name!=='Ásia').map(g=>`<button type="button" class="nci-geo-label" data-region="${esc(g.name)}" style="left:${g.x}%;top:${g.y}%;width:${g.w/660*100}%;--region:${g.color}"><b>${esc(g.name)}</b><strong>${g.pct.toFixed(1).replace('.',',')}%</strong></button>`).join('');svg.querySelectorAll('[data-country]').forEach(p=>{p.onpointermove=e=>tooltip(p.dataset.country+'\nMapa ilustrativo · sem peso auditado por país',e,p);p.onpointerleave=hideTip;p.onclick=()=>details(p.dataset.country,'País representado por geometria vetorial. A distribuição de cores é ilustrativa; não há cálculo de exposição da carteira a este país.');p.onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();p.onclick()}}});let geoLegend=$('#geoAuxLegend');if(!geoLegend){geoLegend=document.createElement('div');geoLegend.id='geoAuxLegend';geoLegend.className='nci-geo-legend';document.querySelector('.nci-geo-content')?.appendChild(geoLegend)}document.querySelectorAll('[data-region]').forEach(b=>b.onclick=e=>{e.stopPropagation();const region=b.dataset.region;if(geoLegend.classList.contains('open')&&geoLegend.dataset.region===region){geoLegend.classList.remove('open');geoLegend.dataset.region='';return}const g=state.geography.find(x=>x.name===region);if(!g)return;const panel=document.querySelector('.nci-geo-content'),br=b.getBoundingClientRect(),pr=panel.getBoundingClientRect();geoLegend.dataset.region=region;geoLegend.innerHTML=`<b>${esc(g.name)} <span class="pct">${g.pct.toFixed(1).replace('.',',')}%</span></b><div class="assets">${esc(g.assets||'Sem ativos classificados nesta região.')}</div><small>${state.geographyIllustrative?'Referência ilustrativa.':'Classificação operacional direta da carteira.'}</small>`;geoLegend.style.left=Math.min(Math.max(br.left-pr.left,8),Math.max(8,pr.width-323))+'px';geoLegend.style.top=Math.min(br.bottom-pr.top+6,Math.max(8,pr.height-123))+'px';geoLegend.classList.add('open')});document.querySelector('.nci-geo-content')?.addEventListener('click',e=>{if(!e.target.closest('.nci-geo-label')){geoLegend?.classList.remove('open');if(geoLegend)geoLegend.dataset.region=''}});requestAnimationFrame(drawRegionalConnectors)}
+}svg.innerHTML=html;$('#nativeGeoLabels').innerHTML=state.geography.filter(g=>g.name!=='Ásia').map(g=>`<button type="button" class="nci-geo-label" data-region="${esc(g.name)}" style="left:${g.x}%;top:${g.y}%;width:${g.w/660*100}%;--region:${g.color}"><b>${esc(g.name)}</b><strong>${g.pct.toFixed(1).replace('.',',')}%</strong></button>`).join('');svg.querySelectorAll('[data-country]').forEach(p=>{p.onpointermove=e=>tooltip(p.dataset.country+'\nMapa ilustrativo · sem peso auditado por país',e,p);p.onpointerleave=hideTip;p.onclick=()=>details(p.dataset.country,'País representado por geometria vetorial. A distribuição de cores é ilustrativa; não há cálculo de exposição da carteira a este país.');p.onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();p.onclick()}}});let geoLegend=$('#geoAuxLegend');if(!geoLegend){geoLegend=document.createElement('div');geoLegend.id='geoAuxLegend';geoLegend.className='nci-geo-legend';document.querySelector('.nci-geo-content')?.appendChild(geoLegend)}document.querySelectorAll('[data-region]').forEach(b=>b.onclick=e=>{e.stopPropagation();const region=b.dataset.region;if(geoLegend.classList.contains('open')&&geoLegend.dataset.region===region){geoLegend.classList.remove('open');geoLegend.dataset.region='';return}const g=state.geography.find(x=>x.name===region);if(!g)return;const panel=document.querySelector('.nci-geo-content'),br=b.getBoundingClientRect(),pr=panel.getBoundingClientRect();geoLegend.dataset.region=region;geoLegend.innerHTML=`<b>${esc(g.name)} <span class="pct">${g.pct.toFixed(1).replace('.',',')}%</span></b><div class="assets">${esc(g.assets||'Sem ativos classificados nesta região.')}</div><small>${state.geographyIllustrative?'Referência ilustrativa.':'Classificação operacional direta da carteira.'}</small>`;geoLegend.style.left=Math.min(Math.max(br.left-pr.left,8),Math.max(8,pr.width-323))+'px';geoLegend.style.top=Math.min(br.bottom-pr.top+6,Math.max(8,pr.height-123))+'px';geoLegend.classList.add('open')});document.querySelector('.nci-geo-content')?.addEventListener('click',e=>{if(!e.target.closest('.nci-geo-label')){geoLegend?.classList.remove('open');if(geoLegend)geoLegend.dataset.region=''}});scheduleRegionalConnectors()}
+
+ function scheduleRegionalConnectors(){
+  const panel=document.querySelector('.nci-geo-content');
+  if(!panel)return;
+  const redraw=()=>requestAnimationFrame(drawRegionalConnectors);
+  redraw();
+  setTimeout(redraw,80);
+  setTimeout(redraw,260);
+  if(typeof ResizeObserver==='function'&&!panel.__nciGeoResizeObserver){
+    const observer=new ResizeObserver(redraw);
+    observer.observe(panel);
+    panel.__nciGeoResizeObserver=observer;
+  }
+ }
 
  function drawRegionalConnectors(){
   const panel=document.querySelector('.nci-geo-content');
@@ -5524,7 +5538,19 @@ if(document.readyState==='loading'){
       </div>
     `;
 
-    box.style.display = 'block';
+    // Alertas complementam o ranking, mas nunca podem substituir ou empurrar
+    // os cartões do heatmap para fora do painel. Mantemos o detalhe como
+    // tooltip do subtítulo e exibimos apenas a contagem no cabeçalho.
+    box.style.display = 'none';
+    const panel = document.getElementById('nativeRadarHeat')?.closest('.nci-heat-panel');
+    const caption = panel?.querySelector('.nci-heading small');
+    if (caption) {
+      caption.textContent = `Ranking dinâmico · ${relevant.length} sinal${relevant.length === 1 ? '' : 'is'}`;
+      caption.title = relevant.map(item => {
+        const cfg = LABELS[item.priceActionState];
+        return `${item.ticker}: ${cfg?.title || item.priceActionState}`;
+      }).join('\n');
+    }
   }
 
   async function refreshOperationalAlerts() {
