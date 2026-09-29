@@ -81,7 +81,11 @@ export default async function handler(req,res){
     }
   }
 
-  res.setHeader('Cache-Control','s-maxage=86400, stale-while-revalidate=604800');
+  const complete=fundamentals.length===symbols.length&&fundamentals.every(row=>row.ok);
+  // Provider errors and partial payloads must never become a 24-hour CDN truth.
+  res.setHeader('Cache-Control',complete
+    ?'s-maxage=86400, stale-while-revalidate=604800'
+    :'no-store, max-age=0');
   res.status(200).json({
     configured:true,
     source:'Alpha Vantage',
@@ -89,6 +93,7 @@ export default async function handler(req,res){
     provenancePolicy:{schemaVersion:'NCI_FUNDAMENTALS_PROVENANCE_V1',maxRetrievalAgeHours:36,maxReportedPeriodAgeDays:200},
     minIntervalMs:MIN_INTERVAL_MS,
     rateLimited,
+    complete,
     fundamentals
   });
 }
