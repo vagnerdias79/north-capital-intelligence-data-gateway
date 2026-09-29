@@ -41,6 +41,8 @@ test('API and Radar expose the audited provenance contract',async()=>{
   assert.match(api,/NCI_FUNDAMENTALS_PROVENANCE_V1/);
   assert.match(api,/sourcePeriodEnd:overviewResult\.sourcePeriodEnd/);
   assert.match(api,/sourcePublishedAt:null/);
+  assert.match(api,/'no-store, max-age=0'/);
+  assert.match(api,/complete,/);
   assert.match(html,/fundamentals-provenance\.js/);
   assert.match(html,/applyFundamentalsRow/);
   assert.match(html,/fundamentalsProvenance\?\.eligible===true/);
@@ -51,6 +53,8 @@ test('API and Radar expose the audited provenance contract',async()=>{
   assert.match(html,/row\?\.provenance\?\.schemaVersion==='NCI_FUNDAMENTALS_PROVENANCE_V1'/);
   assert.match(html,/backendJSON\('\/api\/fundamentals\?symbols='/);
   assert.doesNotMatch(html,/backendJSON\('https:\/\/north-capital-intelligence-data-gat\.vercel\.app\/api\/fundamentals/);
+  assert.match(html,/PROVIDER_LIMIT:'limite do provedor'/);
+  assert.match(html,/localStorage\.removeItem\(FUND_CACHE_KEY\)/);
 });
 
 test('requires a dated reference before an approved valuation can pass',()=>{
