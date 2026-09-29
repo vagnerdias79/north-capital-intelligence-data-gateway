@@ -934,6 +934,7 @@ html,body{max-width:100%;overflow-x:hidden}.app,.main,.nci-dash{min-width:0;max-
 
 
 <style id="nci-buy-score-v1-style">
+.or-provenance{margin-top:8px;border:1px solid #72551f;border-radius:6px;background:#211908;padding:7px 8px;display:grid;gap:4px;min-width:0}.or-provenance>div{display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap}.or-provenance b{font-size:8px;color:#efc157}.or-provenance span,.or-provenance small{font-size:7px;color:#aebbc4;line-height:1.4;overflow-wrap:anywhere}.or-provenance.verified{border-color:#327441;background:#0a2112}.or-provenance.verified b{color:#62df76}
 .or-score-engine{margin-top:10px;border:1px solid #27465a;border-radius:10px;background:#071723;padding:10px}
 .or-score-engine-head{display:flex;justify-content:space-between;gap:10px;align-items:center;margin-bottom:8px}
 .or-score-engine-head b{font-size:10px;color:#f0c75e;letter-spacing:.06em}
@@ -3224,7 +3225,7 @@ for(const [key,a] of Object.entries(originAnchors)){
  };
 })();
 </script>
-<script type="module">import gate from '/lib/radar/fundamentals-valuation-gate.js';window.NCIFundamentalsValuationGate=gate;</script>
+<script type="module">import gate from '/lib/radar/fundamentals-valuation-gate.js';import provenance from '/lib/radar/fundamentals-provenance.js';window.NCIFundamentalsValuationGate=gate;window.NCIFundamentalsProvenance=provenance;</script>
 <script id="nci-radar-v2-runtime">(()=>{
  const root=document.querySelector('#radar');
  const wideRoot=document.querySelector('#radarWideZone');
@@ -3267,8 +3268,8 @@ for(const [key,a] of Object.entries(originAnchors)){
  const dataComplete=x=>{
    const f=x?.fundamentals||{};
    const vals=[f.profitMargin,f.operatingMargin,f.returnOnEquity,f.revenueGrowthYoY,f.earningsGrowthYoY,f.forwardPE,f.peg,f.priceToSales,f.analystTargetPrice,x?.price];
-   const count=vals.filter(v=>Number.isFinite(Number(v))).length;
-   return x?.dataStatus==='CURRENT' && x?.buyScoreStatus==='VALID' && count>=8;
+   const count=vals.filter(v=>v!==null&&v!==undefined&&v!==''&&Number.isFinite(Number(v))).length;
+   return x?.fundamentalsProvenance?.eligible===true && x?.dataStatus==='VERIFIED' && x?.buyScoreStatus==='VALID' && count>=8;
  };
  const NCI_ENTRY_POLICIES={
    LLY:{
@@ -3497,6 +3498,7 @@ Gates pendentes: ${pend}.`);
       <div class="or-fact"><span>Market Timing · PRICE ONLY</span><b><i class="or-market-signal ${marketMeta.cls}">${marketMeta.label}</i></b></div>
     </div>
     <div class="or-market-note"><b>${marketMeta.text}</b><span>Fonte: ${market.source||'—'} · ${marketSignalsAsOf?new Date(marketSignalsAsOf).toLocaleString('pt-BR'):'aguardando sincronização'}. Decisão humana obrigatória.</span></div>
+    ${(()=>{const p=x.fundamentalsProvenance||{},verified=p.eligible===true;return `<div class="or-provenance ${verified?'verified':'pending'}"><div><b>DADOS FUNDAMENTAIS · ${verified?'VERIFICADOS':(p.status||'PENDENTES')}</b><span>${p.provider||x.fundamentals?.provider||'fonte não confirmada'}</span></div><small>Consulta: ${p.retrievedAt?new Date(p.retrievedAt).toLocaleString('pt-BR'):'—'} · Período reportado: ${p.sourcePeriodEnd?String(p.sourcePeriodEnd).split('-').reverse().join('/'):'não informado'} · Escritas: BLOQUEADAS</small></div>`})()}
     <div class="or-decision-gate ${decision.tone}">
       <div><span>GATE 3.2 · FUNDAMENTOS + VALUATION</span><b>${decision.decision}</b></div>
       ${decision.blockers?.length?`<div class="or-blocker-list">${decision.blockers.slice(0,3).map((b,i)=>`<p><strong>${i+1}. ${b.label}</strong><em>${b.detail}</em></p>`).join('')}</div>`:`<p>${decision.headline}</p>`}
@@ -4387,6 +4389,7 @@ Gates pendentes: ${pend}.`);
 
  function calculateBuyScore(x){
    const f=x?.fundamentals||{},price=Number(x?.price);
+   const provenanceEligible=x?.fundamentalsProvenance?.eligible===true;
    const qualityVals=[
      asc(f.profitMargin,0.05,0.35),
      asc(f.operatingMargin,0.08,0.40),
@@ -4416,6 +4419,7 @@ Gates pendentes: ${pend}.`);
    };
 
    const missing=[];
+   if(!provenanceEligible)missing.push('proveniência/freshness');
    if(!Number.isFinite(factors.quality))missing.push('qualidade');
    if(!Number.isFinite(factors.growth))missing.push('crescimento');
    if(!Number.isFinite(factors.valuation))missing.push('valuation');
@@ -4473,6 +4477,26 @@ Gates pendentes: ${pend}.`);
    });
  }
 
+ function applyFundamentalsRow(asset,row,fallbackRetrievedAt){
+   if(!asset||!row?.ok)return false;
+   const provenanceInput={
+     provider:row.provenance?.provider||row.source,
+     retrievedAt:row.provenance?.retrievedAt||fallbackRetrievedAt,
+     sourcePeriodEnd:row.provenance?.sourcePeriodEnd||null,
+     data:row.data||{}
+   };
+   const evaluated=window.NCIFundamentalsProvenance?.evaluate?.(provenanceInput)||{
+     status:'VALIDATOR_UNAVAILABLE',eligible:false,
+     provider:provenanceInput.provider,retrievedAt:provenanceInput.retrievedAt,
+     sourcePeriodEnd:provenanceInput.sourcePeriodEnd
+   };
+   asset.fundamentals={...(asset.fundamentals||{}),...(row.data||{}),provider:provenanceInput.provider,providerRetrievedAt:provenanceInput.retrievedAt,sourcePeriodEnd:provenanceInput.sourcePeriodEnd};
+   asset.fundamentalsProvenance={...(row.provenance||{}),...evaluated};
+   asset.dataStatus=evaluated.eligible?'VERIFIED':evaluated.status;
+   asset.lastDataSync=provenanceInput.retrievedAt||fallbackRetrievedAt||null;
+   return evaluated.eligible;
+ }
+
  async function refreshFundamentals(){
    const radar=window.RADAR||DB.radar||[];
    const FUND_CACHE_KEY='NCI_FUNDAMENTALS_SYNC_V1';
@@ -4483,10 +4507,7 @@ Gates pendentes: ${pend}.`);
        let restored=0;
        for(const row of prev.rows){
          const x=radar.find(r=>r.ticker===row.ticker);
-         if(x&&row.ok){
-           x.fundamentals={...(x.fundamentals||{}),...(row.data||{}),provider:row.source,providerUpdatedAt:prev.at};
-           x.dataStatus='CURRENT';x.lastDataSync=prev.at;restored++;
-         }
+         if(x&&row.ok&&applyFundamentalsRow(x,row,prev.at))restored++;
        }
        recalculateRadarBuyScores();
        return{status:'CACHED',updated:restored,failed:radar.length-restored,configured:true,source:'Alpha Vantage'};
@@ -4497,10 +4518,7 @@ Gates pendentes: ${pend}.`);
      for(const row of rows){
        const x=radar.find(r=>r.ticker===row.ticker);
        if(!x)continue;
-       if(row.ok){
-         x.fundamentals={...(x.fundamentals||{}),...(row.data||{}),provider:row.source,providerUpdatedAt:data.asOf};
-         x.dataStatus='CURRENT';x.lastDataSync=data.asOf;updated++;
-       }else failed++;
+       if(row.ok&&applyFundamentalsRow(x,row,data.asOf))updated++;else failed++;
      }
      failed+=Math.max(0,radar.length-rows.length);
      if(data?.configured && rows.length){
