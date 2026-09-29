@@ -55,6 +55,8 @@ test('API and Radar expose the audited provenance contract',async()=>{
   assert.doesNotMatch(html,/backendJSON\('https:\/\/north-capital-intelligence-data-gat\.vercel\.app\/api\/fundamentals/);
   assert.match(html,/PROVIDER_LIMIT:'limite do provedor'/);
   assert.match(html,/localStorage\.removeItem\(FUND_CACHE_KEY\)/);
+  assert.match(html,/i\+=3/);
+  assert.match(html,/TRANSPORT_TIMEOUT:'timeout da consulta'/);
 });
 
 test('requires a dated reference before an approved valuation can pass',()=>{
