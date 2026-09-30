@@ -4752,9 +4752,8 @@ Gates pendentes: ${pend}.`);
  }
 
  function scheduleAutomaticRefresh(restoredState){
-   const restoredAt=Date.parse(restoredState?.at||'');
-   const stale=!Number.isFinite(restoredAt)||(Date.now()-restoredAt)>=15*60*1000;
-   if(!stale)return;
+   // Every opening follows the same refresh path as the manual button.
+   // Cached data is only the initial snapshot, never a reason to skip synchronization.
    const start=()=>run();
    if(document.readyState==='loading'){
      document.addEventListener('DOMContentLoaded',start,{once:true});
@@ -6788,14 +6787,6 @@ import { createAuthClient } from 'https://esm.sh/@neondatabase/auth';
     el.classList.remove('nci-tax-ok','nci-tax-warn','nci-tax-bad');
     el.classList.add(kind);el.textContent=text;el.title=title||'';
   }
-  function decorate(result){
-    const root=document.querySelector('#dashboard .nci-dash');if(!root)return;
-    root.querySelector('.nci-tax-preview-note')?.remove();
-    const note=document.createElement('div');
-    note.className='nci-tax-preview-note';
-    note.innerHTML='<b>TAX normalizado '+result.phase+'</b> · efeito de caixa US$ -0,54 · 9 eventos autenticados · patrimônio preservado sem dupla dedução.';
-    root.prepend(note);
-  }
   function showDiagnostic(){
     const r=window.NCI_DASHBOARD_TAX_PREVIEW;
     if(!r){alert('NCI TAX Dashboard\n\nAguardando execução.');return}
@@ -6867,8 +6858,8 @@ import { createAuthClient } from 'https://esm.sh/@neondatabase/auth';
         taxSource:a.activeSource,
         taxPhase:data.phase
       });
-      if(normalized)decorate(result);
-      else document.querySelector('#dashboard .nci-dash .nci-tax-preview-note')?.remove();
+      // TAX status belongs in the statusbar; adding a child here shifts the fixed dashboard grid.
+      document.querySelector('#dashboard .nci-dash .nci-tax-preview-note')?.remove();
       if(rollback){
         setPill('nci-tax-bad','TAX Dashboard '+data.phase+' · ROLLBACK','Divergência detectada; fonte legada restaurada automaticamente.');
       }else if(normalized){
