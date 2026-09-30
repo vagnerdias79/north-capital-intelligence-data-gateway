@@ -2922,7 +2922,14 @@ for(const [key,a] of Object.entries(originAnchors)){
  function nextLedgerId(){return 'user-'+Date.now()+'-'+Math.random().toString(36).slice(2,8)}
  function applyOperation(op){const row={id:op.id||nextLedgerId(),date:op.date||new Date().toISOString().slice(0,10),type:normalizeType(op.type||op.action),action:normalizeType(op.type||op.action),ticker:op.ticker,value:Number(op.value)||0,qty:op.qty==null?null:Number(op.qty),price:op.price==null?null:Number(op.price),fee:Number(op.fee)||0,source:op.source||'LANÇAMENTO NCI',description:op.description||'',...op};row.type=normalizeType(row.type||row.action);row.action=row.type;rows.push(row);rows.sort((a,b)=>b.date.localeCompare(a.date)||String(b.id).localeCompare(String(a.id)));persistLedgerDelta();syncReadModel();return row}
  function removeOperation(id){const i=rows.findIndex(r=>r.id===id);if(i<0||NCI_BASELINE_LEDGER_IDS.has(id)||NCI_CONTROLLED_LEDGER_IDS.has(id))return false;rows.splice(i,1);persistLedgerDelta();syncReadModel();return true}
- function setMarketPrice(ticker,price,asOf=DB.meta.asOf,source=null){if(!Number.isFinite(Number(price))||Number(price)<=0)return false;NCI_MARKET_SNAPSHOT[ticker]={price:Number(price),asOf,source};syncReadModel();return true}
+ function setMarketPrice(ticker,price,asOf=DB.meta.asOf,source=null){
+   if(!Number.isFinite(Number(price))||Number(price)<=0)return false;
+   const currentAt=Date.parse(NCI_MARKET_SNAPSHOT[ticker]?.asOf||'');
+   const incomingAt=Date.parse(asOf||'');
+   // Parallel feeds must never replace a newer confirmed quote with an older snapshot.
+   if(Number.isFinite(currentAt)&&(!Number.isFinite(incomingAt)||incomingAt<currentAt))return false;
+   NCI_MARKET_SNAPSHOT[ticker]={price:Number(price),asOf,source};syncReadModel();return true
+ }
  function portfolioMetrics(){const total=PORT.reduce((s,x)=>s+Number(x.qty||0)*Number(x.price||0),0),invested=PORT.reduce((s,x)=>s+Number(x.invested||0),0),cash=PORT.filter(x=>x.type==='Cash').reduce((s,x)=>s+Number(x.qty||0)*Number(x.price||0),0),equity=total-cash;return{total,invested,result:total-invested,cash,equity}}
  function stateFingerprint(){return JSON.stringify({portfolio:derivePortfolio(),ledger:rows,marketSnapshot:NCI_MARKET_SNAPSHOT})}
  window.NCI_DATABASE={version:'1.0',architecture:'single-source-of-truth',meta:DB.meta,ledger:rows,fxLedger:window.NCI_FX_USD,marketSnapshot:NCI_MARKET_SNAPSHOT,policy:POLICY,radar:RADAR,positionAnchor:NCI_POSITION_ANCHOR,capitalPool:DB.capitalPool,objectives:DB.objectives,derivePortfolio,syncReadModel,applyOperation,removeOperation,setMarketPrice,portfolioMetrics,stateFingerprint,getState(){return structuredClone({version:this.version,meta:this.meta,ledger:rows,fxLedger:this.fxLedger,marketSnapshot:NCI_MARKET_SNAPSHOT,policy:POLICY,radar:RADAR,positionAnchor:NCI_POSITION_ANCHOR,portfolio:PORT,capitalPool:DB.capitalPool,objectives:DB.objectives})}};
