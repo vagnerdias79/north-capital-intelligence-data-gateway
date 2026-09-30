@@ -4381,7 +4381,7 @@ Gates pendentes: ${pend}.`);
  async function refreshPrices(){
    const symbols=allSymbols();
    try{
-     const data=await backendJSON('https://north-capital-intelligence-data-gat.vercel.app/api/quotes?symbols='+encodeURIComponent(symbols.join(',')),30000);
+     const data=await backendJSON('/api/quotes?symbols='+encodeURIComponent(symbols.join(',')),30000);
      const rows=Array.isArray(data?.quotes)?data.quotes:[];
      let ok=0,fail=0;
      const sources={};

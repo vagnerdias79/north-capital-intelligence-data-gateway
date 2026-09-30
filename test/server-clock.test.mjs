@@ -30,3 +30,18 @@ test('existing quotes endpoint returns server time without caching or provider c
  assert.match(headers['Cache-Control'],/no-store/);
  assert.ok(Date.parse(body.serverTime)>=before&&Date.parse(body.serverTime)<=Date.now());
 });
+
+test('quote refresh uses deployment API and prefers actual provider quote time',async()=>{
+ const code=html.slice(html.indexOf(' async function refreshPrices(){'),html.indexOf(' const BUY_SCORE_MODEL='));
+ let requested;let applied;
+ const radar={ticker:'TEST'};
+ const c={window:{RADAR:[radar],NCI_DATABASE:{setMarketPrice(...args){applied=args}}},DB:{meta:{asOf:'2026-09-30T13:30:00Z'}},allSymbols:()=>['TEST'],recalculateRadarBuyScores(){},backendJSON:async url=>{
+ requested=url;return {quotes:[{ticker:'TEST',ok:true,price:100,source:'Yahoo',quoteTimestamp:'2026-09-30T20:00:00Z',sourceTimestamp:'2026-09-30T13:30:00Z'}]};
+ }};
+ runInNewContext(code,c);
+ const result=await c.refreshPrices();
+ assert.equal(requested,'/api/quotes?symbols=TEST');
+ assert.equal(result.ok,1);
+ assert.equal(applied[2],'2026-09-30T20:00:00Z');
+ assert.equal(radar.marketAsOf,'2026-09-30T20:00:00Z');
+});
