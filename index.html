@@ -4669,7 +4669,7 @@ Gates pendentes: ${pend}.`);
    try{
      market=await refreshPrices();
      fundamental=await refreshFundamentals();
-     try{const clock=await backendJSON('/api/time',10000);window.NCI_SERVER_CLOCK?.observe(clock.serverTime)}catch(e){}
+     try{const clock=await backendJSON('/api/quotes?clock=1',10000);window.NCI_SERVER_CLOCK?.observe(clock.serverTime)}catch(e){}
      normalizeRadar();refreshAllViews();
 
      const serverNow=window.NCI_SERVER_CLOCK?.now();

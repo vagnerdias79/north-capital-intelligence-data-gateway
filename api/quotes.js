@@ -192,6 +192,10 @@ async function quote(ticker){
 export { quote };
 
 export default async function handler(req,res){
+  if(String(req.query?.clock||'')==='1'){
+    res.setHeader('Cache-Control','no-store, max-age=0');
+    return res.status(200).json({serverTime:new Date().toISOString()});
+  }
   res.setHeader('Cache-Control','s-maxage=30, stale-while-revalidate=120');
   const raw = String(req.query.symbols||'');
   const symbols = [...new Set(raw.split(',').map(clean).filter(Boolean))].slice(0,60);

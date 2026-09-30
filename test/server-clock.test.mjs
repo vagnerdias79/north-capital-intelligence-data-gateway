@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFile} from 'node:fs/promises';
 import {runInNewContext} from 'node:vm';
-import handler from '../api/time.js';
+import handler from '../api/quotes.js';
 const html=await readFile(new URL('../index.html',import.meta.url),'utf8');
 const clock=html.match(/<script id="nci-server-clock-v1">([\s\S]*?)<\/script>/)[1];
 const freshness=html.slice(html.indexOf(' function marketFreshness('),html.indexOf(' function scale('));
@@ -24,9 +24,9 @@ test('server clock and freshness ignore workstation offset and timezone',()=>{
   assert.equal(c.marketFreshness(positions).fresh,false);
  }
 });
-test('time endpoint returns server time without caching',()=>{
+test('existing quotes endpoint returns server time without caching or provider calls',async()=>{
  const before=Date.now();let body;const headers={};
- handler({}, {setHeader(k,v){headers[k]=v},status(code){assert.equal(code,200);return this},json(value){body=value}});
+ await handler({query:{clock:'1'}}, {setHeader(k,v){headers[k]=v},status(code){assert.equal(code,200);return this},json(value){body=value}});
  assert.match(headers['Cache-Control'],/no-store/);
  assert.ok(Date.parse(body.serverTime)>=before&&Date.parse(body.serverTime)<=Date.now());
 });
