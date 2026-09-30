@@ -4747,13 +4747,28 @@ Gates pendentes: ${pend}.`);
        }
      }
    }catch(e){}
+
+   return updateState;
+ }
+
+ function scheduleAutomaticRefresh(restoredState){
+   const restoredAt=Date.parse(restoredState?.at||'');
+   const stale=!Number.isFinite(restoredAt)||(Date.now()-restoredAt)>=15*60*1000;
+   if(!stale)return;
+   const start=()=>run();
+   if(document.readyState==='loading'){
+     document.addEventListener('DOMContentLoaded',start,{once:true});
+   }else{
+     queueMicrotask(start);
+   }
  }
 
  window.NCI_BUY_SCORE={model:BUY_SCORE_MODEL,calculate:calculateBuyScore,recalculate:recalculateRadarBuyScores};
   window.NCI_FULL_UPDATE={run,running:false,refreshPrices,refreshFundamentals,normalizeRadar,persistState,restore,marketStateKey:MARKET_STATE_KEY};
  if(btn)btn.onclick=run;
  invalidateLegacyRadarScores();
- restore();
+ const restoredState=restore();
+ scheduleAutomaticRefresh(restoredState);
 })();
 </script>
 
@@ -5224,7 +5239,7 @@ function ensurePill(){
   el.id='nciPatrimonialReconciliationStatus';
   el.className='pill nci-pat-warn';
   el.textContent='Patrimônio v1 · verificando';
-  el.title='Reconciliação patrimonial Shadow: local × Neon por ticker, quantidade, investido e preço médio.';
+  el.title='Reconciliação da baseline congelada: âncora USD 1.1.02 × Neon. Operações posteriores são exibidas separadamente.';
   bar.appendChild(el);
   el.addEventListener('click',showDiagnostic);
   return el;
@@ -5237,7 +5252,15 @@ function setPill(kind,text,title){
   el.textContent=text;
   if(title) el.title=title;
 }
-function localPortfolio(){
+function localBaselinePortfolio(){
+  try{
+    const state=window.NCI_DATABASE?.getState?.();
+    return Array.isArray(state?.positionAnchor)?state.positionAnchor:[];
+  }catch(e){
+    return [];
+  }
+}
+function localOperationalPortfolio(){
   try{
     const state=window.NCI_DATABASE?.getState?.();
     return Array.isArray(state?.portfolio)?state.portfolio:[];
@@ -5296,7 +5319,8 @@ function compare(localRows,remoteRows){
 async function run(){
   setPill('nci-pat-warn','Patrimônio v1 · verificando','Consultando positions autenticadas no Data Layer v2.');
   try{
-    const localRows=localPortfolio();
+    const localRows=localBaselinePortfolio();
+    const operationalRows=localOperationalPortfolio();
     if(localRows.length===0){
       throw new Error('LOCAL_PORTFOLIO_UNAVAILABLE');
     }
@@ -5372,6 +5396,11 @@ async function run(){
         }))
       },
       totals:cmp.totals,
+      operational:Object.freeze({
+        count:operationalRows.length,
+        investedUsd:Number(operationalRows.reduce((s,x)=>s+Number(x?.invested||0),0).toFixed(2)),
+        postBaselineOperations:true
+      }),
       fingerprint:data.positionBaseline?.fingerprint||null,
       costBasisAuthority:data.positionBaseline?.costBasisAuthority||null,
       writeOperationsEnabled:false,
@@ -5421,6 +5450,7 @@ function showDiagnostic(){
       'Posições: '+r.positions.passed+'/'+r.positions.total+'\n'+
       'Capital investido local: US$ '+r.totals.localInvested.toFixed(2)+'\n'+
       'Capital investido Neon: US$ '+r.totals.remoteInvested.toFixed(2)+'\n'+
+      'Estado operacional atual: US$ '+Number(r.operational?.investedUsd||0).toFixed(2)+'\n'+
       'Fingerprint: '+(r.fingerprint||'—')+'\n'+
       'Cost basis remoto: '+(r.costBasisAuthority||'—')+'\n'+
       'Escrita: BLOQUEADA'
