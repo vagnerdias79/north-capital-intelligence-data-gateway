@@ -14,7 +14,7 @@ test('carries quote timestamp and source into the portfolio read model',()=>{
 test('labels the Heatmap as current market or dated snapshot',()=>{
   assert.match(html,/function marketFreshness\(positions\)/);
   assert.match(html,/const oldest=timestamps\.length\?Math\.min\(\.\.\.timestamps\):null/);
-  assert.match(html,/Date\.now\(\)-oldest/);
+  assert.match(html,/serverNow-oldest/);
   assert.match(html,/MERCADO \$\{stamp\}/);
   assert.match(html,/SNAPSHOT \$\{stamp\}/);
   assert.match(html,/cotações datadas/);

@@ -151,6 +151,7 @@ async function yahoo(ticker){
     currency: meta.currency || 'USD',
     exchange: meta.exchangeName || meta.fullExchangeName || null,
     source: 'Yahoo',
+    quoteTimestamp: Number.isFinite(Number(meta.regularMarketPrice))&&Number.isFinite(regularMarketTime)&&regularMarketTime>0?new Date(regularMarketTime*1000).toISOString():sourceTimestamp,
 
     return1d,
     return5d,
