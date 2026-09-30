@@ -11,7 +11,7 @@ async function overview(ticker,key){
   if(!r.ok)throw new Error(`HTTP ${r.status}`);
   const d=await r.json();
   if(d.Note||d.Information||!d.Symbol)throw new Error(d.Note||d.Information||'overview unavailable');
-  return {
+  return {data:{
     marketCap:num(d.MarketCapitalization),
     revenueTTM:num(d.RevenueTTM),
     grossProfitTTM:num(d.GrossProfitTTM),
@@ -31,7 +31,7 @@ async function overview(ticker,key){
     beta:num(d.Beta),
     week52High:num(d['52WeekHigh']),
     week52Low:num(d['52WeekLow'])
-  };
+  },sourcePeriodEnd:d.LatestQuarter||null,currency:d.Currency||null,country:d.Country||null,exchange:d.Exchange||null};
 }
 
 export default async function handler(req,res){
@@ -48,8 +48,17 @@ export default async function handler(req,res){
   for(let i=0;i<symbols.length;i++){
     const ticker=symbols[i];
     try{
-      const data=await overview(ticker,key);
-      fundamentals.push({ticker,ok:true,source:'Alpha Vantage',data});
+      const overviewResult=await overview(ticker,key);
+      fundamentals.push({
+        ticker,ok:true,source:'Alpha Vantage',data:overviewResult.data,
+        provenance:{
+          schemaVersion:'NCI_FUNDAMENTALS_PROVENANCE_V1',
+          provider:'Alpha Vantage',dataset:'OVERVIEW',retrievedAt:asOf,
+          sourcePeriodEnd:overviewResult.sourcePeriodEnd,
+          currency:overviewResult.currency,country:overviewResult.country,exchange:overviewResult.exchange,
+          sourcePublishedAt:null,sourceUrlType:'provider-api'
+        }
+      });
     }catch(e){
       const msg=String(e?.message||e);
       const isRate=/frequency|rate|limit|requests per second|API call/i.test(msg);
@@ -72,13 +81,19 @@ export default async function handler(req,res){
     }
   }
 
-  res.setHeader('Cache-Control','s-maxage=86400, stale-while-revalidate=604800');
+  const complete=fundamentals.length===symbols.length&&fundamentals.every(row=>row.ok);
+  // Provider errors and partial payloads must never become a 24-hour CDN truth.
+  res.setHeader('Cache-Control',complete
+    ?'s-maxage=86400, stale-while-revalidate=604800'
+    :'no-store, max-age=0');
   res.status(200).json({
     configured:true,
     source:'Alpha Vantage',
     asOf,
+    provenancePolicy:{schemaVersion:'NCI_FUNDAMENTALS_PROVENANCE_V1',maxRetrievalAgeHours:36,maxReportedPeriodAgeDays:200},
     minIntervalMs:MIN_INTERVAL_MS,
     rateLimited,
+    complete,
     fundamentals
   });
 }

@@ -934,6 +934,7 @@ html,body{max-width:100%;overflow-x:hidden}.app,.main,.nci-dash{min-width:0;max-
 
 
 <style id="nci-buy-score-v1-style">
+.or-provenance{margin-top:8px;border:1px solid #72551f;border-radius:6px;background:#211908;padding:7px 8px;display:grid;gap:4px;min-width:0}.or-provenance>div{display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap}.or-provenance b{font-size:8px;color:#efc157}.or-provenance span,.or-provenance small{font-size:7px;color:#aebbc4;line-height:1.4;overflow-wrap:anywhere}.or-provenance.verified{border-color:#327441;background:#0a2112}.or-provenance.verified b{color:#62df76}
 .or-score-engine{margin-top:10px;border:1px solid #27465a;border-radius:10px;background:#071723;padding:10px}
 .or-score-engine-head{display:flex;justify-content:space-between;gap:10px;align-items:center;margin-bottom:8px}
 .or-score-engine-head b{font-size:10px;color:#f0c75e;letter-spacing:.06em}
@@ -2345,7 +2346,21 @@ html+='</defs>';const project=([lon,lat])=>[(lon+180)*2,(85-lat)*2],pointTone={u
 for(const [key,a] of Object.entries(originAnchors)){
   const [x,y]=project([a.lon,a.lat]);
   html+=`<circle class="geo-origin geo-origin-${key}" cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="3.2" fill="${pointTone[key]}" fill-opacity="1" stroke="${pointTone[key]}" stroke-opacity=".98" stroke-width="1.15" filter="url(#point-glow-${key})"/>`;
-}svg.innerHTML=html;$('#nativeGeoLabels').innerHTML=state.geography.filter(g=>g.name!=='Ásia').map(g=>`<button type="button" class="nci-geo-label" data-region="${esc(g.name)}" style="left:${g.x}%;top:${g.y}%;width:${g.w/660*100}%;--region:${g.color}"><b>${esc(g.name)}</b><strong>${g.pct.toFixed(1).replace('.',',')}%</strong></button>`).join('');svg.querySelectorAll('[data-country]').forEach(p=>{p.onpointermove=e=>tooltip(p.dataset.country+'\nMapa ilustrativo · sem peso auditado por país',e,p);p.onpointerleave=hideTip;p.onclick=()=>details(p.dataset.country,'País representado por geometria vetorial. A distribuição de cores é ilustrativa; não há cálculo de exposição da carteira a este país.');p.onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();p.onclick()}}});let geoLegend=$('#geoAuxLegend');if(!geoLegend){geoLegend=document.createElement('div');geoLegend.id='geoAuxLegend';geoLegend.className='nci-geo-legend';document.querySelector('.nci-geo-content')?.appendChild(geoLegend)}document.querySelectorAll('[data-region]').forEach(b=>b.onclick=e=>{e.stopPropagation();const region=b.dataset.region;if(geoLegend.classList.contains('open')&&geoLegend.dataset.region===region){geoLegend.classList.remove('open');geoLegend.dataset.region='';return}const g=state.geography.find(x=>x.name===region);if(!g)return;const panel=document.querySelector('.nci-geo-content'),br=b.getBoundingClientRect(),pr=panel.getBoundingClientRect();geoLegend.dataset.region=region;geoLegend.innerHTML=`<b>${esc(g.name)} <span class="pct">${g.pct.toFixed(1).replace('.',',')}%</span></b><div class="assets">${esc(g.assets||'Sem ativos classificados nesta região.')}</div><small>${state.geographyIllustrative?'Referência ilustrativa.':'Classificação operacional direta da carteira.'}</small>`;geoLegend.style.left=Math.min(Math.max(br.left-pr.left,8),Math.max(8,pr.width-323))+'px';geoLegend.style.top=Math.min(br.bottom-pr.top+6,Math.max(8,pr.height-123))+'px';geoLegend.classList.add('open')});document.querySelector('.nci-geo-content')?.addEventListener('click',e=>{if(!e.target.closest('.nci-geo-label')){geoLegend?.classList.remove('open');if(geoLegend)geoLegend.dataset.region=''}});requestAnimationFrame(drawRegionalConnectors)}
+}svg.innerHTML=html;$('#nativeGeoLabels').innerHTML=state.geography.filter(g=>g.name!=='Ásia').map(g=>`<button type="button" class="nci-geo-label" data-region="${esc(g.name)}" style="left:${g.x}%;top:${g.y}%;width:${g.w/660*100}%;--region:${g.color}"><b>${esc(g.name)}</b><strong>${g.pct.toFixed(1).replace('.',',')}%</strong></button>`).join('');svg.querySelectorAll('[data-country]').forEach(p=>{p.onpointermove=e=>tooltip(p.dataset.country+'\nMapa ilustrativo · sem peso auditado por país',e,p);p.onpointerleave=hideTip;p.onclick=()=>details(p.dataset.country,'País representado por geometria vetorial. A distribuição de cores é ilustrativa; não há cálculo de exposição da carteira a este país.');p.onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();p.onclick()}}});let geoLegend=$('#geoAuxLegend');if(!geoLegend){geoLegend=document.createElement('div');geoLegend.id='geoAuxLegend';geoLegend.className='nci-geo-legend';document.querySelector('.nci-geo-content')?.appendChild(geoLegend)}document.querySelectorAll('[data-region]').forEach(b=>b.onclick=e=>{e.stopPropagation();const region=b.dataset.region;if(geoLegend.classList.contains('open')&&geoLegend.dataset.region===region){geoLegend.classList.remove('open');geoLegend.dataset.region='';return}const g=state.geography.find(x=>x.name===region);if(!g)return;const panel=document.querySelector('.nci-geo-content'),br=b.getBoundingClientRect(),pr=panel.getBoundingClientRect();geoLegend.dataset.region=region;geoLegend.innerHTML=`<b>${esc(g.name)} <span class="pct">${g.pct.toFixed(1).replace('.',',')}%</span></b><div class="assets">${esc(g.assets||'Sem ativos classificados nesta região.')}</div><small>${state.geographyIllustrative?'Referência ilustrativa.':'Classificação operacional direta da carteira.'}</small>`;geoLegend.style.left=Math.min(Math.max(br.left-pr.left,8),Math.max(8,pr.width-323))+'px';geoLegend.style.top=Math.min(br.bottom-pr.top+6,Math.max(8,pr.height-123))+'px';geoLegend.classList.add('open')});document.querySelector('.nci-geo-content')?.addEventListener('click',e=>{if(!e.target.closest('.nci-geo-label')){geoLegend?.classList.remove('open');if(geoLegend)geoLegend.dataset.region=''}});scheduleRegionalConnectors()}
+
+ function scheduleRegionalConnectors(){
+  const panel=document.querySelector('.nci-geo-content');
+  if(!panel)return;
+  const redraw=()=>requestAnimationFrame(drawRegionalConnectors);
+  redraw();
+  setTimeout(redraw,80);
+  setTimeout(redraw,260);
+  if(typeof ResizeObserver==='function'&&!panel.__nciGeoResizeObserver){
+    const observer=new ResizeObserver(redraw);
+    observer.observe(panel);
+    panel.__nciGeoResizeObserver=observer;
+  }
+ }
 
  function drawRegionalConnectors(){
   const panel=document.querySelector('.nci-geo-content');
@@ -3224,7 +3239,7 @@ for(const [key,a] of Object.entries(originAnchors)){
  };
 })();
 </script>
-<script type="module">import gate from '/lib/radar/fundamentals-valuation-gate.js';window.NCIFundamentalsValuationGate=gate;</script>
+<script type="module">import gate from '/lib/radar/fundamentals-valuation-gate.js';import provenance from '/lib/radar/fundamentals-provenance.js';window.NCIFundamentalsValuationGate=gate;window.NCIFundamentalsProvenance=provenance;</script>
 <script id="nci-radar-v2-runtime">(()=>{
  const root=document.querySelector('#radar');
  const wideRoot=document.querySelector('#radarWideZone');
@@ -3267,8 +3282,8 @@ for(const [key,a] of Object.entries(originAnchors)){
  const dataComplete=x=>{
    const f=x?.fundamentals||{};
    const vals=[f.profitMargin,f.operatingMargin,f.returnOnEquity,f.revenueGrowthYoY,f.earningsGrowthYoY,f.forwardPE,f.peg,f.priceToSales,f.analystTargetPrice,x?.price];
-   const count=vals.filter(v=>Number.isFinite(Number(v))).length;
-   return x?.dataStatus==='CURRENT' && x?.buyScoreStatus==='VALID' && count>=8;
+   const count=vals.filter(v=>v!==null&&v!==undefined&&v!==''&&Number.isFinite(Number(v))).length;
+   return x?.fundamentalsProvenance?.eligible===true && x?.dataStatus==='VERIFIED' && x?.buyScoreStatus==='VALID' && count>=8;
  };
  const NCI_ENTRY_POLICIES={
    LLY:{
@@ -3282,9 +3297,10 @@ for(const [key,a] of Object.entries(originAnchors)){
    }
  };
  const entryPolicy=x=>NCI_ENTRY_POLICIES[x?.ticker]||null;
+ const valuationVerified=x=>['ATTRACTIVE','FAIR'].includes(String(x?.valuationStatus||'').toUpperCase())&&x?.valuationProvenance?.eligible===true;
  const gates=x=>[
    ['Tese',gateState(x.thesisStatus,['VALID']),x.thesisStatus==='VALID'?'Tese validada':'Aprofundar tese e diferenciais'],
-   ['Valuation',gateState(x.valuationStatus,['ATTRACTIVE','FAIR']),['ATTRACTIVE','FAIR'].includes(x.valuationStatus)?'Valuation aprovado':entryPolicy(x)?'Faixa já registrada; confirmar valuation':'Definir retorno esperado e faixa de entrada'],
+   ['Valuation',valuationVerified(x)?'APROVADA':'PENDENTE',valuationVerified(x)?'Valuation aprovado com referência auditável':entryPolicy(x)?'Faixa já registrada; confirmar valuation e referência':'Definir retorno esperado, faixa de entrada e referência'],
    ['Sobreposição',gateState(x.overlapStatus,['PASS']),x.overlapStatus==='BLOCK'?'Redundância estratégica detectada':'Checar exposição direta e via ETFs'],
    ['Dados',dataComplete(x)?'APROVADA':'PENDENTE',dataComplete(x)?'Fundamentos + mercado atuais e suficientes':'Atualizar fundamentos, preço ou campos essenciais'],
    ['NCI Buy Score',x.buyScore==null||x.buyScore===''?'PENDENTE':Number(x.buyScore)>=60?'APROVADA':'BLOQUEADO',x.buyScore!=null&&x.buyScore!==''&&Number.isFinite(Number(x.buyScore))?`Buy Score ${x.buyScore}/100 · mínimo 60`:'Buy Score pendente']
@@ -3292,7 +3308,7 @@ for(const [key,a] of Object.entries(originAnchors)){
  const allGatesApproved=x=>gates(x).every(g=>g[1]==='APROVADA');
  const decisionGate=(x,market)=>(window.NCIFundamentalsValuationGate?.evaluate||(()=>({decision:'BLOCKED_DATA',tone:'blocked',headline:'Gate em inicialização.',decisionAuthorization:false,writeOperationsEnabled:false})))({
    thesisStatus:x.thesisStatus,
-   valuationStatus:x.valuationStatus,
+   valuationStatus:valuationVerified(x)?x.valuationStatus:'PENDING',
    dataComplete:dataComplete(x),
    buyScore:x.buyScore,
    priceActionState:market?.priceActionState||'DATA_UNAVAILABLE',
@@ -3314,7 +3330,7 @@ for(const [key,a] of Object.entries(originAnchors)){
  function saveState(){
    localStorage.setItem('nci_opportunity_radar_v3',JSON.stringify(RADAR.map(x=>({
      ticker:x.ticker,stage:x.stage,priorityBand:x.priorityBand,lastReview:x.lastReview,reviewDays:x.reviewDays,
-     thesisStatus:x.thesisStatus,valuationStatus:x.valuationStatus,overlapStatus:x.overlapStatus,manualPromotionAt:x.manualPromotionAt||null
+     thesisStatus:x.thesisStatus,valuationStatus:x.valuationStatus,valuationProvenance:x.valuationProvenance||null,overlapStatus:x.overlapStatus,manualPromotionAt:x.manualPromotionAt||null
    }))));
  }
  function restoreState(){
@@ -3475,7 +3491,14 @@ Gates pendentes: ${pend}.`);
    wideRoot.querySelectorAll('[data-gate-field]').forEach(sel=>sel.onchange=e=>{
      const x=RADAR.find(r=>r.ticker===e.target.dataset.gateTicker);
      if(!x)return;
-     x[e.target.dataset.gateField]=e.target.value;
+     const field=e.target.dataset.gateField,value=e.target.value,previous=x[field];
+     if(field==='valuationStatus'&&['ATTRACTIVE','FAIR'].includes(value)){
+       const reference=prompt('Informe a referência do valuation (fonte, modelo ou revisão e data).');
+       if(!reference||reference.trim().length<8){e.target.value=previous;return;}
+       const input={status:value,method:'HUMAN_REVIEW',reference:reference.trim(),assessedAt:new Date().toISOString()};
+       x.valuationProvenance=window.NCIFundamentalsProvenance?.evaluateValuation?.(input)||{...input,status:'VALIDATOR_UNAVAILABLE',eligible:false};
+     }else if(field==='valuationStatus')x.valuationProvenance={status:'NOT_APPROVED',eligible:false,valuationStatus:value,method:'HUMAN_REVIEW',reference:'',assessedAt:new Date().toISOString()};
+     x[field]=value;
      saveState();render();updateRadarSignals();
    });
 
@@ -3497,6 +3520,7 @@ Gates pendentes: ${pend}.`);
       <div class="or-fact"><span>Market Timing · PRICE ONLY</span><b><i class="or-market-signal ${marketMeta.cls}">${marketMeta.label}</i></b></div>
     </div>
     <div class="or-market-note"><b>${marketMeta.text}</b><span>Fonte: ${market.source||'—'} · ${marketSignalsAsOf?new Date(marketSignalsAsOf).toLocaleString('pt-BR'):'aguardando sincronização'}. Decisão humana obrigatória.</span></div>
+    ${(()=>{const p=x.fundamentalsProvenance||{},v=x.valuationProvenance||{},verified=p.eligible===true,vVerified=v.eligible===true;return `<div class="or-provenance ${verified&&vVerified?'verified':'pending'}"><div><b>FUNDAMENTOS · ${verified?'VERIFICADOS':(p.status||'PENDENTES')}</b><span>${p.provider||x.fundamentals?.provider||'fonte não confirmada'}</span></div><small>Consulta: ${p.retrievedAt?new Date(p.retrievedAt).toLocaleString('pt-BR'):'—'} · Período reportado: ${p.sourcePeriodEnd?String(p.sourcePeriodEnd).split('-').reverse().join('/'):'não informado'}</small><small>Valuation: ${vVerified?'VERIFICADO':(v.status||'REFERÊNCIA PENDENTE')} · ${v.reference||'nenhuma referência registrada'} · Escritas: BLOQUEADAS</small></div>`})()}
     <div class="or-decision-gate ${decision.tone}">
       <div><span>GATE 3.2 · FUNDAMENTOS + VALUATION</span><b>${decision.decision}</b></div>
       ${decision.blockers?.length?`<div class="or-blocker-list">${decision.blockers.slice(0,3).map((b,i)=>`<p><strong>${i+1}. ${b.label}</strong><em>${b.detail}</em></p>`).join('')}</div>`:`<p>${decision.headline}</p>`}
@@ -3538,7 +3562,7 @@ Gates pendentes: ${pend}.`);
     <div class="or-entry-levels">
      ${policy.levels.map((level,i)=>`<div class="or-entry-level"><small>NÍVEL ${i+1}</small><b>≤ US$ ${level.max.toLocaleString('en-US')}</b><span>${level.label}</span></div>`).join('')}
     </div>
-    <div class="or-entry-status"><b>Status atual: ${distance!==null&&distance>0?`cotação ${(distance*100).toFixed(1).replace('.',',')}% acima do Nível 1`:'preço dentro da faixa monitorada'}.</b> Tese ${thesisValid?'validada':'ainda em validação'}; valuation ${['ATTRACTIVE','FAIR'].includes(String(x.valuationStatus||'').toUpperCase())?'aprovado':'pendente de confirmação'}. Decisão registrada em ${policy.decidedAt.split('-').reverse().join('/')}.</div>
+    <div class="or-entry-status"><b>Status atual: ${distance!==null&&distance>0?`cotação ${(distance*100).toFixed(1).replace('.',',')}% acima do Nível 1`:'preço dentro da faixa monitorada'}.</b> Tese ${thesisValid?'validada':'ainda em validação'}; valuation ${valuationVerified(x)?'aprovado com referência':'pendente de confirmação auditável'}. Decisão registrada em ${policy.decidedAt.split('-').reverse().join('/')}.</div>
    </article>`;
  }
 
@@ -4387,6 +4411,7 @@ Gates pendentes: ${pend}.`);
 
  function calculateBuyScore(x){
    const f=x?.fundamentals||{},price=Number(x?.price);
+   const provenanceEligible=x?.fundamentalsProvenance?.eligible===true;
    const qualityVals=[
      asc(f.profitMargin,0.05,0.35),
      asc(f.operatingMargin,0.08,0.40),
@@ -4416,6 +4441,7 @@ Gates pendentes: ${pend}.`);
    };
 
    const missing=[];
+   if(!provenanceEligible)missing.push('proveniência/freshness');
    if(!Number.isFinite(factors.quality))missing.push('qualidade');
    if(!Number.isFinite(factors.growth))missing.push('crescimento');
    if(!Number.isFinite(factors.valuation))missing.push('valuation');
@@ -4473,43 +4499,100 @@ Gates pendentes: ${pend}.`);
    });
  }
 
+ function applyFundamentalsRow(asset,row,fallbackRetrievedAt){
+   if(!asset||!row?.ok)return false;
+   const provenanceInput={
+     provider:row.provenance?.provider||row.source,
+     retrievedAt:row.provenance?.retrievedAt||fallbackRetrievedAt,
+     sourcePeriodEnd:row.provenance?.sourcePeriodEnd||null,
+     data:row.data||{}
+   };
+   const evaluated=window.NCIFundamentalsProvenance?.evaluate?.(provenanceInput)||{
+     status:'VALIDATOR_UNAVAILABLE',eligible:false,
+     provider:provenanceInput.provider,retrievedAt:provenanceInput.retrievedAt,
+     sourcePeriodEnd:provenanceInput.sourcePeriodEnd
+   };
+   asset.fundamentals={...(asset.fundamentals||{}),...(row.data||{}),provider:provenanceInput.provider,providerRetrievedAt:provenanceInput.retrievedAt,sourcePeriodEnd:provenanceInput.sourcePeriodEnd};
+   asset.fundamentalsProvenance={...(row.provenance||{}),...evaluated};
+   asset.dataStatus=evaluated.eligible?'VERIFIED':evaluated.status;
+   asset.lastDataSync=provenanceInput.retrievedAt||fallbackRetrievedAt||null;
+   return evaluated.eligible;
+ }
+
  async function refreshFundamentals(){
    const radar=window.RADAR||DB.radar||[];
    const FUND_CACHE_KEY='NCI_FUNDAMENTALS_SYNC_V1';
    try{
      const prev=JSON.parse(localStorage.getItem(FUND_CACHE_KEY)||'null');
      const fresh=prev?.at && (Date.now()-new Date(prev.at).getTime()) < 20*60*60*1000;
-     if(fresh && Array.isArray(prev.rows)){
+     const auditableCache=Array.isArray(prev?.rows)&&prev.rows.length===radar.length&&prev.rows.every(row=>
+       row?.ok&&(
+         row?.provenance?.schemaVersion==='NCI_FUNDAMENTALS_PROVENANCE_V1'&&
+         row?.provenance?.provider&&row?.provenance?.retrievedAt&&row?.provenance?.sourcePeriodEnd
+       )
+     );
+     if(fresh && auditableCache){
        let restored=0;
        for(const row of prev.rows){
          const x=radar.find(r=>r.ticker===row.ticker);
-         if(x&&row.ok){
-           x.fundamentals={...(x.fundamentals||{}),...(row.data||{}),provider:row.source,providerUpdatedAt:prev.at};
-           x.dataStatus='CURRENT';x.lastDataSync=prev.at;restored++;
-         }
+         if(x&&row.ok&&applyFundamentalsRow(x,row,prev.at))restored++;
        }
        recalculateRadarBuyScores();
        return{status:'CACHED',updated:restored,failed:radar.length-restored,configured:true,source:'Alpha Vantage'};
      }
-     const data=await backendJSON('https://north-capital-intelligence-data-gat.vercel.app/api/fundamentals?symbols='+encodeURIComponent(radar.map(x=>x.ticker).join(',')),45000);
-     const rows=Array.isArray(data?.fundamentals)?data.fundamentals:[];
+     // Same-origin is mandatory: Preview must validate the API contract from the
+     // exact deployment under review, not silently reuse the Production API.
+     const tickers=radar.map(x=>x.ticker);
+     const batches=[];
+     for(let i=0;i<tickers.length;i+=3)batches.push(tickers.slice(i,i+3));
+     const rows=[];
+     let data={configured:true,source:'Alpha Vantage',asOf:new Date().toISOString(),complete:true,rateLimited:false};
+     for(const batch of batches){
+       const part=await backendJSON('/api/fundamentals?symbols='+encodeURIComponent(batch.join(',')),20000);
+       data={
+         configured:data.configured&&!!part?.configured,
+         source:part?.source||data.source,
+         asOf:part?.asOf||data.asOf,
+         complete:data.complete&&part?.complete===true,
+         rateLimited:data.rateLimited||part?.rateLimited===true
+       };
+       if(Array.isArray(part?.fundamentals))rows.push(...part.fundamentals);
+       if(part?.rateLimited)break;
+     }
      let updated=0,failed=0;
+     const pendingReasons={};
+     const addReason=reason=>{const key=String(reason||'PROVIDER_ERROR');pendingReasons[key]=(pendingReasons[key]||0)+1};
      for(const row of rows){
        const x=radar.find(r=>r.ticker===row.ticker);
        if(!x)continue;
-       if(row.ok){
-         x.fundamentals={...(x.fundamentals||{}),...(row.data||{}),provider:row.source,providerUpdatedAt:data.asOf};
-         x.dataStatus='CURRENT';x.lastDataSync=data.asOf;updated++;
-       }else failed++;
+       if(row.ok&&applyFundamentalsRow(x,row,data.asOf))updated++;
+       else{
+         failed++;
+         const reason=row.rateLimited?'PROVIDER_LIMIT':(row.ok?(x.dataStatus||'NOT_VERIFIED'):'PROVIDER_ERROR');
+         x.dataStatus=reason;
+         x.fundamentalsSyncError=row.error||null;
+         addReason(reason);
+       }
      }
-     failed+=Math.max(0,radar.length-rows.length);
-     if(data?.configured && rows.length){
+     const missingRows=Math.max(0,radar.length-rows.length);
+     failed+=missingRows;
+     if(missingRows)addReason(!data.configured?'PROVIDER_NOT_CONFIGURED':data.rateLimited?'PROVIDER_LIMIT':'NO_RESPONSE');
+     const cacheable=data?.complete===true&&rows.length===radar.length&&rows.every(row=>
+       row?.ok&&row?.provenance?.schemaVersion==='NCI_FUNDAMENTALS_PROVENANCE_V1'
+     );
+     if(data?.configured && cacheable){
        try{localStorage.setItem(FUND_CACHE_KEY,JSON.stringify({at:data.asOf||new Date().toISOString(),rows}))}catch(e){}
+     }else{
+       try{localStorage.removeItem(FUND_CACHE_KEY)}catch(e){}
      }
      recalculateRadarBuyScores();
-     return{status:data?.configured?(failed?'PARTIAL':'OK'):'PENDING',updated,failed,configured:!!data?.configured,source:data?.source||null};
+     const dominantReason=Object.entries(pendingReasons).sort((a,b)=>b[1]-a[1])[0]?.[0]||null;
+     return{status:data?.configured?(failed?'PARTIAL':'OK'):'PENDING',updated,failed,configured:!!data?.configured,source:data?.source||null,pendingReasons,dominantReason};
    }catch(e){
-     return{status:'PENDING',updated:0,failed:radar.length,configured:false,error:String(e?.message||e)};
+     const message=String(e?.message||e);
+     const dominantReason=/abort|timeout/i.test(message)?'TRANSPORT_TIMEOUT':/HTTP/i.test(message)?'HTTP_ERROR':'TRANSPORT_ERROR';
+     try{localStorage.removeItem(FUND_CACHE_KEY)}catch(_){}
+     return{status:'PENDING',updated:0,failed:radar.length,configured:false,error:message,dominantReason};
    }
  }
 
@@ -4578,10 +4661,20 @@ Gates pendentes: ${pend}.`);
      const priceText='Mercado '+market.ok+'/'+market.total;
      const sourceText=sourceLabel(market.sources);
      const fundText=(fundamental.status==='OK'||fundamental.status==='CACHED')
-       ?'fundamentos '+fundamental.updated+(fundamental.status==='CACHED'?' em cache':'')
+       ?'fundamentos '+fundamental.updated+' verificados'+(fundamental.status==='CACHED'?' em cache':'')
        :fundamental.status==='PARTIAL'
-         ?'fundamentos '+fundamental.updated+' parciais'
-         :'fundamentos pendentes';
+         ?'fundamentos '+fundamental.updated+' verificados · '+Number(fundamental.failed||0)+' pendentes'+(fundamental.dominantReason?' ('+({
+           PROVIDER_LIMIT:'limite do provedor',PROVIDER_ERROR:'erro do provedor',UNKNOWN_DATE:'período não informado',
+           STALE_PERIOD:'período contábil vencido',STALE_RETRIEVAL:'consulta vencida',INCOMPLETE:'dados incompletos',
+           NO_RESPONSE:'sem resposta',PROVIDER_NOT_CONFIGURED:'provedor não configurado'
+         }[fundamental.dominantReason]||fundamental.dominantReason)+')':'')
+         :'fundamentos 0 verificados · '+Number(fundamental.failed||0)+' pendentes'+(fundamental.dominantReason?' ('+({
+           PROVIDER_LIMIT:'limite do provedor',PROVIDER_ERROR:'erro do provedor',UNKNOWN_DATE:'período não informado',
+           STALE_PERIOD:'período contábil vencido',STALE_RETRIEVAL:'consulta vencida',INCOMPLETE:'dados incompletos',
+           NO_RESPONSE:'sem resposta',PROVIDER_NOT_CONFIGURED:'provedor não configurado',
+           TRANSPORT_TIMEOUT:'timeout da consulta',HTTP_ERROR:'erro HTTP',
+           TRANSPORT_ERROR:'falha de comunicação'
+         }[fundamental.dominantReason]||fundamental.dominantReason)+')':'');
 
      if(market.ok===market.total&&market.total>0){
        setButton((fundamental.status==='OK'||fundamental.status==='CACHED')?'nci-ok':'nci-warn','✓ '+priceText+' · '+fundText);
@@ -5445,7 +5538,19 @@ if(document.readyState==='loading'){
       </div>
     `;
 
-    box.style.display = 'block';
+    // Alertas complementam o ranking, mas nunca podem substituir ou empurrar
+    // os cartões do heatmap para fora do painel. Mantemos o detalhe como
+    // tooltip do subtítulo e exibimos apenas a contagem no cabeçalho.
+    box.style.display = 'none';
+    const panel = document.getElementById('nativeRadarHeat')?.closest('.nci-heat-panel');
+    const caption = panel?.querySelector('.nci-heading small');
+    if (caption) {
+      caption.textContent = `Ranking dinâmico · ${relevant.length} sinal${relevant.length === 1 ? '' : 'is'}`;
+      caption.title = relevant.map(item => {
+        const cfg = LABELS[item.priceActionState];
+        return `${item.ticker}: ${cfg?.title || item.priceActionState}`;
+      }).join('\n');
+    }
   }
 
   async function refreshOperationalAlerts() {
