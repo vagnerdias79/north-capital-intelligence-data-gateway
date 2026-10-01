@@ -2236,7 +2236,7 @@ function chart(){
  function details(title,text){$('#modalLogo').textContent='NCI';$('#modalTitle').textContent=title;$('#modalCat').textContent='North Capital Intelligence';$('#modalRole').textContent='Rascunho funcional · sem publicação';$('#modalBody').innerHTML='<p style="white-space:pre-line">'+esc(text)+'</p>';$('#assetModal').classList.add('open');$('.modal-close').focus();hideTip()}
  const demoGeo=[{name:'EUA',pct:52.3,color:'#579cef',assets:'núcleo dominante',x:2.5,y:4,w:112,lon:-97,lat:43},{name:'Europa',pct:18.6,color:'#55d782',assets:'RACE / RELX',x:53.5,y:1,w:112,lon:10,lat:50},{name:'LatAm',pct:7.9,color:'#43cadd',assets:'MELI / INTR',x:4.5,y:56,w:112,lon:-55,lat:-16},{name:'Ásia',pct:15.7,color:'#e7b944',assets:'',x:80,y:45,w:112,lon:95,lat:34},{name:'Global',pct:5.5,color:'#b18ae3',assets:'VOO / SCHD / temas',x:47,y:75,w:112,lon:137,lat:-25}];
  const demoSeries=[{name:'NCI USD',color:'#64d83a',end:153},{name:'S&P 500',color:'#5997e2',end:120},{name:'QQQ',color:'#e9bb2e',end:135}].map((s,j)=>({...s,values:Array.from({length:90},(_,i)=>({date:new Date(Date.UTC(2026,5,1+i)).toISOString().slice(0,10),value:100+(s.end-100)*i/89+(i?Math.sin(i*1.9+j)*.7+Math.sin(i*.41+j)*.8:0)}))}));
- const state={portfolio:DB.portfolio,radar:DB.radar,capitalPool:DB.capitalPool,series:demoSeries,seriesIllustrative:true,geography:demoGeo,geographyIllustrative:true,northScore:82,northScoreInformational:true,asOf:DB.meta.asOf,taxCashEffect:null,taxSource:null,taxPhase:null};
+ const state={portfolio:DB.portfolio,radar:DB.radar,capitalPool:DB.capitalPool,series:demoSeries,seriesIllustrative:true,geography:demoGeo,geographyIllustrative:true,asOf:DB.meta.asOf,taxCashEffect:null,taxSource:null,taxPhase:null};
  const latRegion=state.geography.find(g=>g.name==='LatAm'),globalRegion=state.geography.find(g=>g.name==='Global'),asiaRegion=state.geography.find(g=>g.name==='Ásia');if(latRegion)latRegion.color='#91ea38';if(globalRegion){globalRegion.x=47;globalRegion.y=75}if(asiaRegion){asiaRegion.x=73;asiaRegion.y=31}
  const hidden=new Set();let resizeObserver;
  function spark(i){const points=Array.from({length:25},(_,j)=>`${j*3},${65-j*2-(j%3===0?5:0)-(j>19?(j-19)*2:0)}`).join(' ');return `<svg class="nci-spark" viewBox="0 0 76 74" aria-hidden="true"><defs><linearGradient id="spark${i}" x2="0" y2="1"><stop stop-color="${i===3?'#d88e25':'#4dbe31'}" stop-opacity=".15"/><stop offset="1" stop-opacity="0"/></linearGradient></defs><path d="M${points.replaceAll(' ',' L')} L72 74 L0 74Z" fill="url(#spark${i})"/><polyline points="${points}" fill="none" stroke="${i===3?'#f3ac29':'#75d44d'}" stroke-width="1"/></svg>`}
@@ -2284,7 +2284,7 @@ function chart(){
  const s=Number(x.buyScore),has=x.buyScore!=null&&x.buyScore!==''&&Number.isFinite(s);
  const cls=!has?'nci-score-pending':s>=75?'nci-score-high':s>=60?'nci-score-mid':'nci-score-low';
  return `<button class="nci-heat-tile ${cls}" type="button" data-radar="${esc(x.ticker)}" aria-label="Radar ${esc(x.ticker)}"><strong>${esc(x.ticker)}</strong><span>${has?`Buy Score ${Math.round(s)}`:'Score pendente'}</span></button>`;
-}).join('')}</div>${scale(true)}</article><article class="nci-panel nci-executive"><h2 class="nci-executive-title">Leitura executiva NCI <span class="nci-quality audit">AUDITADO</span></h2><p class="nci-reading">Capital Pool: ${money(pool.inTransit)} em trânsito.<br>Caixa USD em TFLO: ${money(pool.tfloAvailable||0)}.<br>${pool.mandatoryDeployment?'Deployment: '+money(pool.mandatoryDeployment)+'.':'Deployment obrigatório: nenhum.'}<br>Prioridades: ${state.radar.filter(x=>Number.isFinite(Number(x.buyScore))).sort((a,b)=>Number(b.buyScore)-Number(a.buyScore)).slice(0,2).map(x=>esc(x.ticker)).join(' e ')||'aguardando scores válidos'}.<br><span class="${maxWeight>.10?'nci-policy-alert':''}">Policy: ${maxPosition?esc(maxPosition.ticker)+' '+(maxWeight*100).toFixed(1)+'%':'sem posições'}${maxWeight>.10?' — acima do limite de 10%.':' — em conformidade.'}</span><br>Dados: mercado e fundamentos sincronizados pelo Full Update; horário exibido no topo.</p><div class="nci-score-card"><div>North Score</div><svg class="nci-gauge" viewBox="0 0 120 115" role="img" aria-label="North Score ${state.northScore}${state.northScoreInformational?' ilustrativo':''}"><path d="M17 96 A47 47 0 1 1 105 60" fill="none" stroke="#173c32" stroke-width="6" stroke-linecap="round"/><path d="M17 96 A47 47 0 1 1 105 60" fill="none" stroke="#4dcf30" stroke-width="6" stroke-linecap="round" pathLength="100" stroke-dasharray="${state.northScore} 100"/><text x="51" y="86" fill="#f6f5f6" text-anchor="middle" font-size="35">${state.northScore}</text><text x="80" y="84" fill="#eee" font-size="14">/100</text></svg><div class="nci-score-status">${state.northScore>=80?'STRONG':'EM REVISÃO'}</div><div class="nci-score-note">${state.northScoreInformational?'Indicador composto':'Pontuação informada'}</div><div class="nci-score-logo" aria-hidden="true"></div></div></article></div></div>`;
+}).join('')}</div>${scale(true)}</article><article class="nci-panel nci-executive"><h2 class="nci-executive-title">Dados das cotações</h2><p class="nci-reading">Cotações com horário informado: ${marketState.dated}/${marketState.total}.<br>Base mais antiga: ${esc(marketState.stamp)} · Brasília.<br>Estado: ${marketState.fresh?'cotações com até 30 minutos':'SNAPSHOT — dados antigos ou horário incompleto'}.<br>Sincronização: consulte a barra superior.</p></article></div></div>`;
  const portfolioHeat=document.querySelector('.nci-bottom .nci-heat-panel');
  if(portfolioHeat){
    const badge=portfolioHeat.querySelector('.nci-quality');
@@ -2298,15 +2298,6 @@ function chart(){
      button.title=`Cotação: ${money(asset.price)} · ${quoteStamp}${asset.marketSource?' · '+asset.marketSource:''}`;
      button.setAttribute('aria-label',`${button.getAttribute('aria-label')}; cotação ${quoteStamp}`);
    });
- }
- const executiveReading=document.querySelector('.nci-reading');
- if(executiveReading){
-   const priorities=state.radar
-     .filter(x=>x.buyScore!=null&&x.buyScore!==''&&Number.isFinite(Number(x.buyScore)))
-     .sort((a,b)=>Number(b.buyScore)-Number(a.buyScore))
-     .slice(0,2)
-     .map(x=>esc(x.ticker));
-   executiveReading.innerHTML=executiveReading.innerHTML.replace(/Prioridades:[^<]*<br>/,`Prioridades: ${priorities.join(' e ')||'aguardando scores válidos'}.<br>`);
  }
  const geoPanel=[...document.querySelectorAll('.nci-middle .nci-panel')].find(p=>p.querySelector('h2')?.textContent.includes('Exposição geográfica'));
  if(geoPanel){geoPanel.classList.add('nci-geo-panel');geoPanel.querySelector('.nci-heading small').textContent='Alocação por região de domicílio (%)';}
