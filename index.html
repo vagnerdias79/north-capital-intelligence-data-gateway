@@ -2210,7 +2210,7 @@ function showMarketSync(){
 }
 
 function chart(){
- const c=$("#perfChart"),ctx=c.getContext("2d"),W=c.width,H=c.height,pad=45;ctx.clearRect(0,0,W,H);ctx.strokeStyle="#28435e";ctx.lineWidth=1;for(let i=0;i<5;i++){let y=pad+i*(H-2*pad)/4;ctx.beginPath();ctx.moveTo(pad,y);ctx.lineTo(W-pad,y);ctx.stroke()}
+ const c=$("#perfChart");if(!c)return;const ctx=c.getContext("2d");if(!ctx)return;const W=c.width,H=c.height,pad=45;ctx.clearRect(0,0,W,H);ctx.strokeStyle="#28435e";ctx.lineWidth=1;for(let i=0;i<5;i++){let y=pad+i*(H-2*pad)/4;ctx.beginPath();ctx.moveTo(pad,y);ctx.lineTo(W-pad,y);ctx.stroke()}
  const series=[[[100, 102.7, 104.3],"#d9b45a"],[[100, 102.3, 103.8],"#5ea0ff"],[[100, 103.4, 105.1],"#30c483"]], min=98,max=107;
  series.forEach(([arr,col])=>{ctx.strokeStyle=col;ctx.lineWidth=3;ctx.beginPath();arr.forEach((v,i)=>{let x=pad+i*(W-2*pad)/(arr.length-1),y=H-pad-(v-min)/(max-min)*(H-2*pad);i?ctx.lineTo(x,y):ctx.moveTo(x,y)});ctx.stroke()});
  ctx.fillStyle="#8fa5bb";ctx.font="12px Segoe UI";["Jun/26", "Jul/26", "Ago/26"].forEach((d,i)=>{let x=pad+i*(W-2*pad)/2;ctx.fillText(d,x-18,H-14)})
