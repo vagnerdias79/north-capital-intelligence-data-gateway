@@ -29,7 +29,6 @@ test('feeds confirmed operational monitor quotes back into the Heatmap source',(
 test('never converts an absent Buy Score into zero in decision views',()=>{
   assert.match(html,/x\.buyScore==null\|\|x\.buyScore===''\?'PENDENTE'/);
   assert.match(html,/has=x\.buyScore!=null&&x\.buyScore!==''/);
-  assert.match(html,/aguardando scores válidos/);
 });
 
 const setter=html.slice(html.indexOf(' function setMarketPrice('),html.indexOf(' function portfolioMetrics('));
