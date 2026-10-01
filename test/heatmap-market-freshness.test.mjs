@@ -22,7 +22,7 @@ test('labels the Heatmap as current market or dated snapshot',()=>{
 
 test('feeds confirmed operational monitor quotes back into the Heatmap source',()=>{
   assert.match(html,/const tickerMap=\{'BRK-B':'BRK\.B'\}/);
-  assert.match(html,/item\.sourceTimestamp\|\|payload\.asOf/);
+  assert.match(html,/item\.quoteTimestamp\|\|null/);
   assert.match(html,/source:'ENTRY_MONITOR'/);
 });
 
@@ -45,4 +45,24 @@ test('late operational snapshots cannot overwrite newer quotes in either complet
     assert.equal(context.setMarketPrice('MSFT',90,'invalid','invalid'),false);
     assert.equal(context.NCI_MARKET_SNAPSHOT.MSFT.price,110);
   }
+});
+
+const freshness=html.slice(html.indexOf(' function marketFreshness('),html.indexOf(' function scale('));
+test('Heatmap uses oldest provider quote across a new server sync',()=>{
+ const ctx={window:{NCI_SERVER_CLOCK:{now:()=>Date.parse('2026-10-01T11:45:00Z')}}};
+ runInNewContext(freshness,ctx);
+ const result=ctx.marketFreshness([{marketAsOf:'2026-09-30T20:00:00Z'},{marketAsOf:'2026-09-30T20:04:00Z'}]);
+ assert.equal(result.fresh,false);
+ assert.match(result.label,/SNAPSHOT/);
+ assert.match(result.stamp,/17:00/);
+ assert.equal(ctx.marketFreshness([{marketAsOf:null}]).fresh,false);
+});
+
+test('operational adapter keeps quote time separate from daily bar time',async()=>{
+ const {createRequire}=await import('node:module');
+ const require=createRequire(import.meta.url);
+ const {quoteToMarketSnapshot}=require('../lib/rebalancing/market-data-adapter.js');
+ const value=quoteToMarketSnapshot({ticker:'MSFT',price:512.9,return1d:0,return5d:0,return20d:0,return60d:0,volatility20d:0.02,gapPct:0,volumeRatio:1,quoteTimestamp:'2026-09-30T20:00:01Z',sourceTimestamp:'2026-09-30T13:30:00Z',source:'Yahoo'});
+ assert.equal(value.quoteTimestamp,'2026-09-30T20:00:01Z');
+ assert.equal(value.sourceTimestamp,'2026-09-30T13:30:00Z');
 });

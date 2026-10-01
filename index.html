@@ -2249,7 +2249,7 @@ function chart(){
    const dated=positions.filter(x=>Number.isFinite(Date.parse(x.marketAsOf||''))).length;
    const serverNow=window.NCI_SERVER_CLOCK?.now();
    const fresh=Number.isFinite(serverNow)&&dated===positions.length&&oldest!==null&&serverNow>=latest&&(serverNow-oldest)<=30*60*1000;
-   const stamp=latest===null?'sem horário':new Date(latest).toLocaleString('pt-BR',{timeZone:'America/Sao_Paulo',day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'});
+   const stamp=oldest===null?'sem horário':new Date(oldest).toLocaleString('pt-BR',{timeZone:'America/Sao_Paulo',day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'});
    return {oldest,latest,dated,total:positions.length,fresh,stamp,label:fresh?`MERCADO ${stamp}`:`SNAPSHOT ${stamp}`};
  }
  function scale(radar=false){return `<div class="nci-scale"><div class="nci-scale-labels">${(radar?['Baixo','Médio','Alto']:['Muito negativo','Negativo','Neutro','Positivo','Muito positivo']).map(x=>`<span>${x}</span>`).join('')}</div><div class="nci-scale-strip ${radar?'nci-scale-score':''}"></div><div class="nci-scale-labels">${(radar?['0','50','100']:['−20%','−10%','−3%','0%','+3%','+10%','+20%']).map(x=>`<span>${x}</span>`).join('')}</div></div>`}
@@ -2289,7 +2289,7 @@ function chart(){
  if(portfolioHeat){
    const badge=portfolioHeat.querySelector('.nci-quality');
    const caption=portfolioHeat.querySelector('.nci-heading small');
-   if(badge){badge.textContent=marketState.label;badge.className='nci-quality '+(marketState.fresh?'market':'collect')}
+   if(badge){badge.title='Horário da cotação mais antiga na carteira, informado pelo provedor. Sincronização é o horário da consulta ao servidor. SNAPSHOT indica cotações com mais de 30 minutos ou sem horário confirmado.';badge.textContent=marketState.label;badge.className='nci-quality '+(marketState.fresh?'market':'collect')}
    if(caption)caption.textContent=`Ações + ETFs · desempenho vs preço médio · ${marketState.dated}/${marketState.total} cotações datadas`;
    portfolioHeat.querySelectorAll('[data-asset]').forEach(button=>{
      const asset=positions.find(x=>x.ticker===button.dataset.asset);
@@ -4389,9 +4389,9 @@ Gates pendentes: ${pend}.`);
        if(row?.ok&&Number.isFinite(Number(row.price))&&Number(row.price)>0){
          ok++;
          sources[row.source]=(sources[row.source]||0)+1;
-         try{window.NCI_DATABASE?.setMarketPrice?.(row.ticker,Number(row.price),row.quoteTimestamp||row.sourceTimestamp||DB.meta.asOf,row.source||null)}catch(e){}
+         try{window.NCI_DATABASE?.setMarketPrice?.(row.ticker,Number(row.price),row.quoteTimestamp||null,row.source||null)}catch(e){}
          const rr=(window.RADAR||DB.radar||[]).find(x=>x.ticker===row.ticker);
-         if(rr){rr.price=Number(row.price);rr.marketSource=row.source;rr.marketAsOf=row.quoteTimestamp||row.sourceTimestamp||null}
+         if(rr){rr.price=Number(row.price);rr.marketSource=row.source;rr.marketAsOf=row.quoteTimestamp||null}
        }else fail++;
      }
      // Count symbols omitted by the backend as failures.
@@ -5621,7 +5621,7 @@ if(document.readyState==='loading'){
       const ready=(payload.states||[]).filter(item=>item?.marketDataReady===true&&Number.isFinite(Number(item.price))&&Number(item.price)>0);
       for(const item of ready){
         const ticker=tickerMap[item.ticker]||item.ticker;
-        window.NCI_DATABASE?.setMarketPrice?.(ticker,Number(item.price),item.sourceTimestamp||payload.asOf,item.source||null);
+        window.NCI_DATABASE?.setMarketPrice?.(ticker,Number(item.price),item.quoteTimestamp||null,item.source||null);
       }
       if(ready.length){
         DB.meta.marketLastSync=payload.asOf;
