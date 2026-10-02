@@ -1331,9 +1331,9 @@ html.nci-ui-ready body{
 <section id="dashboard" class="screen active">
   <div class="grid kpis">
     <div class="card kpi"><div class="label">Carteira USD ativa</div><div class="value" id="kpiValue"></div><div id="kpiPerf"></div></div>
-    <div class="card kpi"><div class="label">Capital Pool em trânsito</div><div class="value">$0.00</div><div class="positive">$282.67 alocados em TFLO</div></div>
-    <div class="card kpi"><div class="label">Locomotivas atuais</div><div class="value">7</div><div class="positive">2 potenciais + 1 opportunity→locomotive</div></div>
-    <div class="card kpi"><div class="label">Deployment obrigatório</div><div class="value">$0</div><div class="warning">Opcionalidade preservada</div></div>
+    <div class="card kpi"><div class="label">Caixa USD · TFLO</div><div class="value">—</div><div class="positive">Aguardando cálculo</div></div>
+    <div class="card kpi"><div class="label">Ações em carteira</div><div class="value">—</div><div class="positive">Aguardando cálculo</div></div>
+    <div class="card kpi"><div class="label">ETFs em carteira</div><div class="value">—</div><div class="warning">Aguardando cálculo</div></div>
   </div>
   <div class="grid two">
     <div class="card"><div class="section-title"><h2>Performance da carteira</h2><span>Métricas atuais auditáveis</span></div><div style="padding:28px;color:#8fa1ae;font-size:12px">O gráfico de evolução relativa foi removido nesta versão.</div></div>
@@ -2268,8 +2268,8 @@ function chart(){
  const total=state.portfolio.reduce((s,x)=>s+x.qty*x.price,0),cost=state.portfolio.reduce((s,x)=>s+x.invested,0),ret=cost?total/cost-1:0,pool=state.capitalPool;
  const stock=state.portfolio.filter(x=>x.type==='Stock'),etfs=state.portfolio.filter(x=>x.type==='ETF'),positions=[...stock,...etfs],marketState=marketFreshness(positions);const leaders=stock.filter(x=>x.category==='Locomotive'),equityTotal=positions.reduce((sum,x)=>sum+x.qty*x.price,0);const maxPosition=positions.slice().sort((a,b)=>b.qty*b.price-a.qty*a.price)[0],maxWeight=maxPosition&&equityTotal?maxPosition.qty*maxPosition.price/equityTotal:0;
  const concentration=concentrationSummary(state.portfolio);
- const kpis=[['Carteira USD ativa',money(total),`${percent(ret)} vs capital investido`,'wallet'],['Capital Pool em trânsito',money(pool.inTransit),pool.inTransit>0?`${money(pool.recycledProfit>=0?pool.recycledProfit:0).replace('$','+$')} reciclado`:(concentration.valid?`${money(concentration.cash)} alocados em TFLO`:'Saldo TFLO indisponível'),'coins'],['Locomotivas atuais',String(leaders.length),'2 potenciais + 1<br>opportunity→locomotive','train'],['Deployment obrigatório',money(pool.mandatoryDeployment).replace('.00',''),'Opcionalidade preservada','shield']];
- $('#dashboard').innerHTML=`<div class="nci-dash"><div class="nci-kpis">${kpis.map((k,i)=>`<article class="nci-panel nci-kpi"><div class="nci-kpi-icon">${icon(k[3])}</div><div class="nci-kpi-label">${k[0]}</div><div class="nci-kpi-value" data-kpi="${i}">${k[1]}</div><div class="nci-kpi-note" ${i===0&&ret<0?'style="color:#ff744c"':''}>${k[2]}</div>${spark(i)}</article>`).join('')}</div><div class="nci-middle"><article class="nci-panel nci-performance-panel"><div class="nci-heading"><h2>Performance da carteira <span class="nci-quality audit">AUDITADO</span></h2><small>Métricas financeiras atuais · sem série histórica estimada</small></div><div class="nci-performance-grid"><div class="nci-performance-metric"><small>Capital investido</small><strong>${money(cost)}</strong><em>Base de custo atual</em></div><div class="nci-performance-metric"><small>Valor atual</small><strong>${money(total)}</strong><em>Posições + caixa USD</em></div><div class="nci-performance-metric ${total-cost>=0?'positive':'negative'}"><small>Resultado não realizado</small><strong>${money(total-cost)}</strong><em>Valor atual − capital investido</em></div><div class="nci-performance-metric ${ret>=0?'positive':'negative'}"><small>Retorno sobre capital investido</small><strong>${percent(ret)}</strong><em>Sem benchmark e sem série sintética</em></div></div></article><article class="nci-panel"><div class="nci-heading"><h2>Exposição geográfica <span class="nci-quality audit">CLASSIFICAÇÃO DIRETA</span> ${info('Metodologia geográfica')}</h2><small>Alocação operacional por região da renda variável</small></div><div class="nci-geo-content"><svg class="nci-world" viewBox="0 0 720 340" aria-label="Mapa mundial interativo por país"></svg><div id="nativeGeoLabels"></div></div><div class="nci-geo-footer">% do patrimônio • Direto + ETFs ${info('Metodologia geográfica')}</div></article></div><div class="nci-bottom"><article class="nci-panel nci-heat-panel"><div class="nci-heading"><h2>Heatmap — carteira de renda variável <span class="nci-quality market">MERCADO</span></h2><small>Ações + ETFs · desempenho vs preço médio</small></div><div class="nci-heat-grid nci-portfolio-grid" id="nativePortfolioHeat">${positions.map(x=>{const r=x.avg?x.price/x.avg-1:NaN;return `<button class="nci-heat-tile ${x.type==='ETF'?'nci-etf-tile':''}" type="button" data-asset="${esc(x.ticker)}" style="background:${heatColor(r)}" aria-label="Ficha ${esc(x.ticker)} (${esc(x.type)}): ${Number.isFinite(r)?percent(r):'sem preço médio'}"><strong>${esc(x.ticker)}</strong><span>${Number.isFinite(r)?percent(r):'—'}</span></button>`}).join('')||'<div class="nci-empty">Sem posições em renda variável.</div>'}</div>${scale()}</article><article class="nci-panel nci-heat-panel"><div class="nci-heading"><h2>Heatmap — prioridades monitoradas</h2><small>Ranking dinâmico · NCI Buy Score</small></div>
+ const kpis=[['Carteira USD ativa',money(total),`${percent(ret)} vs base de custo`,'wallet'],['Caixa USD · TFLO',concentration.valid?money(concentration.cash):'—','Valor de mercado · incluído na carteira','coins'],['Ações em carteira',String(stock.filter(x=>Number(x.qty)>0).length),'Posições com quantidade positiva','train'],['ETFs em carteira',String(etfs.filter(x=>Number(x.qty)>0).length),'Renda variável · exclui TFLO','shield']];
+ $('#dashboard').innerHTML=`<div class="nci-dash"><div class="nci-kpis">${kpis.map((k,i)=>`<article class="nci-panel nci-kpi"><div class="nci-kpi-icon">${icon(k[3])}</div><div class="nci-kpi-label">${k[0]}</div><div class="nci-kpi-value" data-kpi="${i}">${k[1]}</div><div class="nci-kpi-note" ${i===0&&ret<0?'style="color:#ff744c"':''}>${k[2]}</div></article>`).join('')}</div><div class="nci-middle"><article class="nci-panel nci-performance-panel"><div class="nci-heading"><h2>Performance da carteira <span class="nci-quality audit">BASE DE CUSTO</span></h2><small>Métricas financeiras atuais · sem série histórica estimada</small></div><div class="nci-performance-grid"><div class="nci-performance-metric"><small>Capital investido</small><strong>${money(cost)}</strong><em>Base de custo atual</em></div><div class="nci-performance-metric"><small>Valor atual</small><strong>${money(total)}</strong><em>Posições + caixa USD</em></div><div class="nci-performance-metric ${total-cost>=0?'positive':'negative'}"><small>Resultado não realizado</small><strong>${money(total-cost)}</strong><em>Valor atual − capital investido</em></div><div class="nci-performance-metric ${ret>=0?'positive':'negative'}"><small>Retorno sobre capital investido</small><strong>${percent(ret)}</strong><em>Sem benchmark e sem série sintética</em></div></div></article><article class="nci-panel"><div class="nci-heading"><h2>Exposição geográfica <span class="nci-quality audit">CLASSIFICAÇÃO DIRETA</span> ${info('Metodologia geográfica')}</h2><small>Alocação operacional por região da renda variável</small></div><div class="nci-geo-content"><svg class="nci-world" viewBox="0 0 720 340" aria-label="Mapa mundial interativo por país"></svg><div id="nativeGeoLabels"></div></div><div class="nci-geo-footer">% da renda variável • Direto + ETFs ${info('Metodologia geográfica')}</div></article></div><div class="nci-bottom"><article class="nci-panel nci-heat-panel"><div class="nci-heading"><h2>Heatmap — carteira de renda variável <span class="nci-quality market">MERCADO</span></h2><small>Ações + ETFs · desempenho vs preço médio</small></div><div class="nci-heat-grid nci-portfolio-grid" id="nativePortfolioHeat">${positions.map(x=>{const r=x.avg?x.price/x.avg-1:NaN;return `<button class="nci-heat-tile ${x.type==='ETF'?'nci-etf-tile':''}" type="button" data-asset="${esc(x.ticker)}" style="background:${heatColor(r)}" aria-label="Ficha ${esc(x.ticker)} (${esc(x.type)}): ${Number.isFinite(r)?percent(r):'sem preço médio'}"><strong>${esc(x.ticker)}</strong><span>${Number.isFinite(r)?percent(r):'—'}</span></button>`}).join('')||'<div class="nci-empty">Sem posições em renda variável.</div>'}</div>${scale()}</article><article class="nci-panel nci-heat-panel"><div class="nci-heading"><h2>Heatmap — prioridades monitoradas</h2><small>Ranking dinâmico · NCI Buy Score</small></div>
 <div id="nci-operational-alert-layer" style="
   display:none;
   margin-bottom:12px;
@@ -4543,78 +4543,62 @@ Gates pendentes: ${pend}.`);
  async function refreshFundamentals(){
    const radar=window.RADAR||DB.radar||[];
    const FUND_CACHE_KEY='NCI_FUNDAMENTALS_SYNC_V1';
+   const validRows=new Map();
+   const pendingReasons={};
+   let data={configured:true,source:'Alpha Vantage',rateLimited:false};
+   const addReason=reason=>{pendingReasons[reason]=(pendingReasons[reason]||0)+1};
+   const saveCache=()=>{
+     try{localStorage.setItem(FUND_CACHE_KEY,JSON.stringify({rows:[...validRows.values()]}))}catch(_){}
+   };
    try{
      const prev=JSON.parse(localStorage.getItem(FUND_CACHE_KEY)||'null');
-     const fresh=prev?.at && (Date.now()-new Date(prev.at).getTime()) < 20*60*60*1000;
-     const auditableCache=Array.isArray(prev?.rows)&&prev.rows.length===radar.length&&prev.rows.every(row=>
-       row?.ok&&(
-         row?.provenance?.schemaVersion==='NCI_FUNDAMENTALS_PROVENANCE_V1'&&
-         row?.provenance?.provider&&row?.provenance?.retrievedAt&&row?.provenance?.sourcePeriodEnd
-       )
-     );
-     if(fresh && auditableCache){
-       let restored=0;
-       for(const row of prev.rows){
-         const x=radar.find(r=>r.ticker===row.ticker);
-         if(x&&row.ok&&applyFundamentalsRow(x,row,prev.at))restored++;
-       }
-       recalculateRadarBuyScores();
-       return{status:'CACHED',updated:restored,failed:radar.length-restored,configured:true,source:'Alpha Vantage'};
+     for(const row of Array.isArray(prev?.rows)?prev.rows:[]){
+       const x=radar.find(r=>r.ticker===row?.ticker);
+       const retrievedAt=row?.provenance?.retrievedAt;
+       const age=Date.now()-Date.parse(retrievedAt||'');
+       if(x&&row.ok&&row?.provenance?.schemaVersion==='NCI_FUNDAMENTALS_PROVENANCE_V1'&&
+          Number.isFinite(age)&&age>=0&&age<20*60*60*1000&&
+          applyFundamentalsRow(x,row,retrievedAt))validRows.set(row.ticker,row);
      }
-     // Same-origin is mandatory: Preview must validate the API contract from the
-     // exact deployment under review, not silently reuse the Production API.
-     const tickers=radar.map(x=>x.ticker);
-     const batches=[];
-     for(let i=0;i<tickers.length;i+=3)batches.push(tickers.slice(i,i+3));
-     const rows=[];
-     let data={configured:true,source:'Alpha Vantage',asOf:new Date().toISOString(),complete:true,rateLimited:false};
-     for(const batch of batches){
+   }catch(_){}
+   const tickers=radar.map(x=>x.ticker).filter(ticker=>!validRows.has(ticker));
+   let transportReason=null,transportError=null;
+   try{
+     for(let i=0;i<tickers.length;i+=3){
+       const batch=tickers.slice(i,i+3);
        const part=await backendJSON('/api/fundamentals?symbols='+encodeURIComponent(batch.join(',')),20000);
-       data={
-         configured:data.configured&&!!part?.configured,
-         source:part?.source||data.source,
-         asOf:part?.asOf||data.asOf,
-         complete:data.complete&&part?.complete===true,
-         rateLimited:data.rateLimited||part?.rateLimited===true
-       };
-       if(Array.isArray(part?.fundamentals))rows.push(...part.fundamentals);
-       if(part?.rateLimited)break;
-     }
-     let updated=0,failed=0;
-     const pendingReasons={};
-     const addReason=reason=>{const key=String(reason||'PROVIDER_ERROR');pendingReasons[key]=(pendingReasons[key]||0)+1};
-     for(const row of rows){
-       const x=radar.find(r=>r.ticker===row.ticker);
-       if(!x)continue;
-       if(row.ok&&applyFundamentalsRow(x,row,data.asOf))updated++;
-       else{
-         failed++;
-         const reason=row.rateLimited?'PROVIDER_LIMIT':(row.ok?(x.dataStatus||'NOT_VERIFIED'):'PROVIDER_ERROR');
-         x.dataStatus=reason;
-         x.fundamentalsSyncError=row.error||null;
-         addReason(reason);
+       data={configured:data.configured&&!!part?.configured,source:part?.source||data.source,rateLimited:data.rateLimited||part?.rateLimited===true};
+       for(const row of Array.isArray(part?.fundamentals)?part.fundamentals:[]){
+         const x=radar.find(r=>r.ticker===row?.ticker);
+         if(!x||!batch.includes(row.ticker))continue;
+         if(row.ok&&applyFundamentalsRow(x,row,part.asOf)){
+           validRows.set(row.ticker,row);
+           x.fundamentalsSyncError=null;
+         }else{
+           const reason=row.rateLimited?'PROVIDER_LIMIT':row.ok?(x.dataStatus||'NOT_VERIFIED'):'PROVIDER_ERROR';
+           x.dataStatus=reason;x.fundamentalsSyncError=row.error||null;
+           addReason(reason);
+         }
        }
+       // Persist successful batches even if a later request times out.
+       saveCache();
+       if(part?.rateLimited||!part?.configured)break;
      }
-     const missingRows=Math.max(0,radar.length-rows.length);
-     failed+=missingRows;
-     if(missingRows)addReason(!data.configured?'PROVIDER_NOT_CONFIGURED':data.rateLimited?'PROVIDER_LIMIT':'NO_RESPONSE');
-     const cacheable=data?.complete===true&&rows.length===radar.length&&rows.every(row=>
-       row?.ok&&row?.provenance?.schemaVersion==='NCI_FUNDAMENTALS_PROVENANCE_V1'
-     );
-     if(data?.configured && cacheable){
-       try{localStorage.setItem(FUND_CACHE_KEY,JSON.stringify({at:data.asOf||new Date().toISOString(),rows}))}catch(e){}
-     }else{
-       try{localStorage.removeItem(FUND_CACHE_KEY)}catch(e){}
-     }
-     recalculateRadarBuyScores();
-     const dominantReason=Object.entries(pendingReasons).sort((a,b)=>b[1]-a[1])[0]?.[0]||null;
-     return{status:data?.configured?(failed?'PARTIAL':'OK'):'PENDING',updated,failed,configured:!!data?.configured,source:data?.source||null,pendingReasons,dominantReason};
    }catch(e){
-     const message=String(e?.message||e);
-     const dominantReason=/abort|timeout/i.test(message)?'TRANSPORT_TIMEOUT':/HTTP/i.test(message)?'HTTP_ERROR':'TRANSPORT_ERROR';
-     try{localStorage.removeItem(FUND_CACHE_KEY)}catch(_){}
-     return{status:'PENDING',updated:0,failed:radar.length,configured:false,error:message,dominantReason};
+     transportError=String(e?.message||e);
+     transportReason=/abort|timeout/i.test(transportError)?'TRANSPORT_TIMEOUT':/HTTP/i.test(transportError)?'HTTP_ERROR':'TRANSPORT_ERROR';
    }
+   const updated=validRows.size,failed=radar.length-updated;
+   const explained=Object.values(pendingReasons).reduce((sum,n)=>sum+n,0);
+   const missing=Math.max(0,failed-explained);
+   if(missing){
+     const reason=transportReason||(!data.configured?'PROVIDER_NOT_CONFIGURED':data.rateLimited?'PROVIDER_LIMIT':'NO_RESPONSE');
+     pendingReasons[reason]=(pendingReasons[reason]||0)+missing;
+   }
+   saveCache();
+   recalculateRadarBuyScores();
+   const dominantReason=Object.entries(pendingReasons).sort((a,b)=>b[1]-a[1])[0]?.[0]||null;
+   return{status:failed?(updated?'PARTIAL':'PENDING'):(tickers.length?'OK':'CACHED'),updated,failed,configured:data.configured,source:data.source,pendingReasons,dominantReason,...(transportError?{error:transportError}:{})};
  }
 
  function normalizeRadar(){
