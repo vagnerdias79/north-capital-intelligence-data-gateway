@@ -93,3 +93,18 @@ test('integrates the phase 3.2 decision gate into the Radar card',async()=>{
   assert.match(html,/NCI_ENTRY_POLICIES/);
   assert.match(html,/Faixa já registrada; confirmar valuation/);
 });
+
+test('pullbacks never override overlap, target, entry-range or score blockers',()=>{
+ const pullback={...approved,priceActionState:'PULLBACK'};
+ const cases=[
+  [{overlapStatus:'BLOCK'},'BLOCKED_OVERLAP'],
+  [{price:210,analystTargetPrice:195},'WAIT_PRICE'],
+  [{price:210,entryLevels:[{max:200}]},'WAIT_PRICE'],
+  [{buyScore:59},'BLOCKED_SCORE']
+ ];
+ for(const [input,decision] of cases){
+  const result=evaluate({...pullback,...input});
+  assert.equal(result.decision,decision);
+  assert.equal(result.decisionAuthorization,false);
+ }
+});

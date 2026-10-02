@@ -3546,7 +3546,7 @@ Gates pendentes: ${pend}.`);
       ${decision.blockers?.length?`<div class="or-blocker-list">${decision.blockers.slice(0,3).map((b,i)=>`<p><strong>${i+1}. ${b.label}</strong><em>${b.detail}</em></p>`).join('')}</div>`:`<p>${decision.headline}</p>`}
       <small>Somente análise · promoção automática: NÃO · aporte autorizado: NÃO · escritas: BLOQUEADAS</small>
     </div>
-    ${(()=>{const bd=x.buyScoreDetails||{},f=bd.factors||{},pc=v=>Number.isFinite(Number(v))?Number(v).toFixed(0):'—',up=Number.isFinite(Number(bd.upsideRaw))?(Number(bd.upsideRaw)*100).toFixed(1)+'%':'—';return `<div class="or-score-engine">
+    ${(()=>{const bd=x.buyScoreDetails||{},f=bd.factors||{},present=v=>v!==null&&v!==undefined&&v!==''&&Number.isFinite(Number(v)),pc=v=>present(v)?Number(v).toFixed(0):'—',up=present(bd.upsideRaw)?(Number(bd.upsideRaw)*100).toFixed(1)+'%':'—';return `<div class="or-score-engine">
       <div class="or-score-engine-head"><b>NCI BUY SCORE v1.1 · FROZEN</b><span>Completude ${(Number(bd.completeness||0)*100).toFixed(0)}%</span></div>
       <div class="or-score-breakdown">
        <div class="or-score-factor"><span>Qualidade · 25%</span><strong>${pc(f.quality)}</strong><small>margens + ROE</small></div>
@@ -4426,8 +4426,9 @@ Gates pendentes: ${pend}.`);
    weights:{quality:25,growth:30,valuation:25,upside:15,risk:5}
  };
  const clamp=(v,a=0,b=100)=>Math.max(a,Math.min(b,v));
- const asc=(v,lo,hi)=>Number.isFinite(Number(v))?clamp((Number(v)-lo)/(hi-lo)*100):null;
- const desc=(v,good,bad)=>Number.isFinite(Number(v))?clamp((bad-Number(v))/(bad-good)*100):null;
+ const scoreFinite=v=>v!==null&&v!==undefined&&v!==''&&Number.isFinite(Number(v));
+ const asc=(v,lo,hi)=>scoreFinite(v)?clamp((Number(v)-lo)/(hi-lo)*100):null;
+ const desc=(v,good,bad)=>scoreFinite(v)?clamp((bad-Number(v))/(bad-good)*100):null;
  const avg=arr=>{const a=arr.filter(Number.isFinite);return a.length?a.reduce((s,v)=>s+v,0)/a.length:null};
 
  function calculateBuyScore(x){
@@ -4458,7 +4459,7 @@ Gates pendentes: ${pend}.`);
      growth:growthCount>=2?avg(growthVals):null,
      valuation:valuationCount>=2?avg(valuationVals):null,
      upside:Number.isFinite(upsideRaw)?asc(upsideRaw,-0.10,0.30):null,
-     risk:Number.isFinite(Number(f.beta))?desc(f.beta,0.80,2.00):null
+     risk:scoreFinite(f.beta)?desc(f.beta,0.80,2.00):null
    };
 
    const missing=[];
