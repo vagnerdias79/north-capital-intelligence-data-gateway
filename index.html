@@ -4426,8 +4426,9 @@ Gates pendentes: ${pend}.`);
    weights:{quality:25,growth:30,valuation:25,upside:15,risk:5}
  };
  const clamp=(v,a=0,b=100)=>Math.max(a,Math.min(b,v));
- const asc=(v,lo,hi)=>Number.isFinite(Number(v))?clamp((Number(v)-lo)/(hi-lo)*100):null;
- const desc=(v,good,bad)=>Number.isFinite(Number(v))?clamp((bad-Number(v))/(bad-good)*100):null;
+ const scoreFinite=v=>v!==null&&v!==undefined&&v!==''&&Number.isFinite(Number(v));
+ const asc=(v,lo,hi)=>scoreFinite(v)?clamp((Number(v)-lo)/(hi-lo)*100):null;
+ const desc=(v,good,bad)=>scoreFinite(v)?clamp((bad-Number(v))/(bad-good)*100):null;
  const avg=arr=>{const a=arr.filter(Number.isFinite);return a.length?a.reduce((s,v)=>s+v,0)/a.length:null};
 
  function calculateBuyScore(x){
@@ -4458,7 +4459,7 @@ Gates pendentes: ${pend}.`);
      growth:growthCount>=2?avg(growthVals):null,
      valuation:valuationCount>=2?avg(valuationVals):null,
      upside:Number.isFinite(upsideRaw)?asc(upsideRaw,-0.10,0.30):null,
-     risk:Number.isFinite(Number(f.beta))?desc(f.beta,0.80,2.00):null
+     risk:scoreFinite(f.beta)?desc(f.beta,0.80,2.00):null
    };
 
    const missing=[];
