@@ -4543,78 +4543,62 @@ Gates pendentes: ${pend}.`);
  async function refreshFundamentals(){
    const radar=window.RADAR||DB.radar||[];
    const FUND_CACHE_KEY='NCI_FUNDAMENTALS_SYNC_V1';
+   const validRows=new Map();
+   const pendingReasons={};
+   let data={configured:true,source:'Alpha Vantage',rateLimited:false};
+   const addReason=reason=>{pendingReasons[reason]=(pendingReasons[reason]||0)+1};
+   const saveCache=()=>{
+     try{localStorage.setItem(FUND_CACHE_KEY,JSON.stringify({rows:[...validRows.values()]}))}catch(_){}
+   };
    try{
      const prev=JSON.parse(localStorage.getItem(FUND_CACHE_KEY)||'null');
-     const fresh=prev?.at && (Date.now()-new Date(prev.at).getTime()) < 20*60*60*1000;
-     const auditableCache=Array.isArray(prev?.rows)&&prev.rows.length===radar.length&&prev.rows.every(row=>
-       row?.ok&&(
-         row?.provenance?.schemaVersion==='NCI_FUNDAMENTALS_PROVENANCE_V1'&&
-         row?.provenance?.provider&&row?.provenance?.retrievedAt&&row?.provenance?.sourcePeriodEnd
-       )
-     );
-     if(fresh && auditableCache){
-       let restored=0;
-       for(const row of prev.rows){
-         const x=radar.find(r=>r.ticker===row.ticker);
-         if(x&&row.ok&&applyFundamentalsRow(x,row,prev.at))restored++;
-       }
-       recalculateRadarBuyScores();
-       return{status:'CACHED',updated:restored,failed:radar.length-restored,configured:true,source:'Alpha Vantage'};
+     for(const row of Array.isArray(prev?.rows)?prev.rows:[]){
+       const x=radar.find(r=>r.ticker===row?.ticker);
+       const retrievedAt=row?.provenance?.retrievedAt;
+       const age=Date.now()-Date.parse(retrievedAt||'');
+       if(x&&row.ok&&row?.provenance?.schemaVersion==='NCI_FUNDAMENTALS_PROVENANCE_V1'&&
+          Number.isFinite(age)&&age>=0&&age<20*60*60*1000&&
+          applyFundamentalsRow(x,row,retrievedAt))validRows.set(row.ticker,row);
      }
-     // Same-origin is mandatory: Preview must validate the API contract from the
-     // exact deployment under review, not silently reuse the Production API.
-     const tickers=radar.map(x=>x.ticker);
-     const batches=[];
-     for(let i=0;i<tickers.length;i+=3)batches.push(tickers.slice(i,i+3));
-     const rows=[];
-     let data={configured:true,source:'Alpha Vantage',asOf:new Date().toISOString(),complete:true,rateLimited:false};
-     for(const batch of batches){
+   }catch(_){}
+   const tickers=radar.map(x=>x.ticker).filter(ticker=>!validRows.has(ticker));
+   let transportReason=null,transportError=null;
+   try{
+     for(let i=0;i<tickers.length;i+=3){
+       const batch=tickers.slice(i,i+3);
        const part=await backendJSON('/api/fundamentals?symbols='+encodeURIComponent(batch.join(',')),20000);
-       data={
-         configured:data.configured&&!!part?.configured,
-         source:part?.source||data.source,
-         asOf:part?.asOf||data.asOf,
-         complete:data.complete&&part?.complete===true,
-         rateLimited:data.rateLimited||part?.rateLimited===true
-       };
-       if(Array.isArray(part?.fundamentals))rows.push(...part.fundamentals);
-       if(part?.rateLimited)break;
-     }
-     let updated=0,failed=0;
-     const pendingReasons={};
-     const addReason=reason=>{const key=String(reason||'PROVIDER_ERROR');pendingReasons[key]=(pendingReasons[key]||0)+1};
-     for(const row of rows){
-       const x=radar.find(r=>r.ticker===row.ticker);
-       if(!x)continue;
-       if(row.ok&&applyFundamentalsRow(x,row,data.asOf))updated++;
-       else{
-         failed++;
-         const reason=row.rateLimited?'PROVIDER_LIMIT':(row.ok?(x.dataStatus||'NOT_VERIFIED'):'PROVIDER_ERROR');
-         x.dataStatus=reason;
-         x.fundamentalsSyncError=row.error||null;
-         addReason(reason);
+       data={configured:data.configured&&!!part?.configured,source:part?.source||data.source,rateLimited:data.rateLimited||part?.rateLimited===true};
+       for(const row of Array.isArray(part?.fundamentals)?part.fundamentals:[]){
+         const x=radar.find(r=>r.ticker===row?.ticker);
+         if(!x||!batch.includes(row.ticker))continue;
+         if(row.ok&&applyFundamentalsRow(x,row,part.asOf)){
+           validRows.set(row.ticker,row);
+           x.fundamentalsSyncError=null;
+         }else{
+           const reason=row.rateLimited?'PROVIDER_LIMIT':row.ok?(x.dataStatus||'NOT_VERIFIED'):'PROVIDER_ERROR';
+           x.dataStatus=reason;x.fundamentalsSyncError=row.error||null;
+           addReason(reason);
+         }
        }
+       // Persist successful batches even if a later request times out.
+       saveCache();
+       if(part?.rateLimited||!part?.configured)break;
      }
-     const missingRows=Math.max(0,radar.length-rows.length);
-     failed+=missingRows;
-     if(missingRows)addReason(!data.configured?'PROVIDER_NOT_CONFIGURED':data.rateLimited?'PROVIDER_LIMIT':'NO_RESPONSE');
-     const cacheable=data?.complete===true&&rows.length===radar.length&&rows.every(row=>
-       row?.ok&&row?.provenance?.schemaVersion==='NCI_FUNDAMENTALS_PROVENANCE_V1'
-     );
-     if(data?.configured && cacheable){
-       try{localStorage.setItem(FUND_CACHE_KEY,JSON.stringify({at:data.asOf||new Date().toISOString(),rows}))}catch(e){}
-     }else{
-       try{localStorage.removeItem(FUND_CACHE_KEY)}catch(e){}
-     }
-     recalculateRadarBuyScores();
-     const dominantReason=Object.entries(pendingReasons).sort((a,b)=>b[1]-a[1])[0]?.[0]||null;
-     return{status:data?.configured?(failed?'PARTIAL':'OK'):'PENDING',updated,failed,configured:!!data?.configured,source:data?.source||null,pendingReasons,dominantReason};
    }catch(e){
-     const message=String(e?.message||e);
-     const dominantReason=/abort|timeout/i.test(message)?'TRANSPORT_TIMEOUT':/HTTP/i.test(message)?'HTTP_ERROR':'TRANSPORT_ERROR';
-     try{localStorage.removeItem(FUND_CACHE_KEY)}catch(_){}
-     return{status:'PENDING',updated:0,failed:radar.length,configured:false,error:message,dominantReason};
+     transportError=String(e?.message||e);
+     transportReason=/abort|timeout/i.test(transportError)?'TRANSPORT_TIMEOUT':/HTTP/i.test(transportError)?'HTTP_ERROR':'TRANSPORT_ERROR';
    }
+   const updated=validRows.size,failed=radar.length-updated;
+   const explained=Object.values(pendingReasons).reduce((sum,n)=>sum+n,0);
+   const missing=Math.max(0,failed-explained);
+   if(missing){
+     const reason=transportReason||(!data.configured?'PROVIDER_NOT_CONFIGURED':data.rateLimited?'PROVIDER_LIMIT':'NO_RESPONSE');
+     pendingReasons[reason]=(pendingReasons[reason]||0)+missing;
+   }
+   saveCache();
+   recalculateRadarBuyScores();
+   const dominantReason=Object.entries(pendingReasons).sort((a,b)=>b[1]-a[1])[0]?.[0]||null;
+   return{status:failed?(updated?'PARTIAL':'PENDING'):(tickers.length?'OK':'CACHED'),updated,failed,configured:data.configured,source:data.source,pendingReasons,dominantReason,...(transportError?{error:transportError}:{})};
  }
 
  function normalizeRadar(){

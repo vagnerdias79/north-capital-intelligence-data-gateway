@@ -54,7 +54,7 @@ test('API and Radar expose the audited provenance contract',async()=>{
   assert.match(html,/backendJSON\('\/api\/fundamentals\?symbols='/);
   assert.doesNotMatch(html,/backendJSON\('https:\/\/north-capital-intelligence-data-gat\.vercel\.app\/api\/fundamentals/);
   assert.match(html,/PROVIDER_LIMIT:'limite do provedor'/);
-  assert.match(html,/localStorage\.removeItem\(FUND_CACHE_KEY\)/);
+  assert.match(html,/validRows\.set\(row.ticker,row\)/);
   assert.match(html,/i\+=3/);
   assert.match(html,/TRANSPORT_TIMEOUT:'timeout da consulta'/);
   assert.match(html,/PROVIDER_NOT_CONFIGURED:'provedor não configurado'/);
