@@ -24,3 +24,15 @@ test('a reported zero remains a valid observation',()=>{
  const a=asset();a.fundamentals.earningsGrowthYoY=0;
  assert.equal(typeof context.calculate(a),'number');
 });
+
+ test('score card distinguishes absent observations from reported zero',()=>{
+ const start=html.indexOf("const bd=x.buyScoreDetails||{}");
+ const end=html.indexOf(';return',start);
+ const expression=html.slice(start,end);
+ for(const value of [null,undefined,'']){
+  const result=vm.runInNewContext('(()=>{'+expression+';return [pc(f.quality),up];})()', {x:{buyScoreDetails:{factors:{quality:value},upsideRaw:value}}});
+  assert.deepEqual(Array.from(result),['—','—']);
+ }
+ const zero=vm.runInNewContext('(()=>{'+expression+';return [pc(f.quality),up];})()', {x:{buyScoreDetails:{factors:{quality:0},upsideRaw:0}}});
+ assert.deepEqual(Array.from(zero),['0','0.0%']);
+ });
