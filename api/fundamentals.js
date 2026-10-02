@@ -1,7 +1,10 @@
 const UA='NorthCapitalIntelligence/1.0';
 const MIN_INTERVAL_MS=1250;
 function clean(s){ return String(s||'').trim().toUpperCase().replace(/[^A-Z0-9.^-]/g,''); }
-function num(v){ const n=Number(v); return Number.isFinite(n)?n:null; }
+function num(v){
+  if(v===null||v===undefined||(typeof v==='string'&&v.trim()===''))return null;
+  const n=Number(v); return Number.isFinite(n)?n:null;
+}
 const sleep=ms=>new Promise(r=>setTimeout(r,ms));
 
 async function overview(ticker,key){
