@@ -27,3 +27,22 @@ test('API preserves missing provider values and legitimate zeros',async()=>{
     else process.env.ALPHA_VANTAGE_API_KEY=previousKey;
   }
 });
+
+for(const [message,type] of [['API call frequency exceeded per minute','FREQUENCY'],['Our standard API rate limit is 25 requests per day','DAILY_QUOTA'],['API rate limit reached','UNKNOWN']]){
+  test('Provider limit classification: '+type,async()=>{
+    const oldFetch=globalThis.fetch,oldKey=process.env.ALPHA_VANTAGE_API_KEY;
+    process.env.ALPHA_VANTAGE_API_KEY='test-only';
+    let calls=0,payload,cacheHeader;
+    globalThis.fetch=async()=>{calls++;return {ok:true,json:async()=>({Information:message})}};
+    const res={setHeader(k,v){cacheHeader=v},status(){return this},json(v){payload=v}};
+    try{
+      await handler({query:{symbols:'MSFT,NVDA'}},res);
+      assert.equal(calls,1);
+      assert.equal(payload.providerLimit.type,type);
+      assert.equal(payload.providerLimit.message,message);
+      assert.ok(Date.parse(payload.providerLimit.retryAt)>Date.now());
+      assert.equal(payload.fundamentals[1].deferred,true);
+      assert.equal(cacheHeader,'no-store, max-age=0');
+    }finally{globalThis.fetch=oldFetch;if(oldKey===undefined)delete process.env.ALPHA_VANTAGE_API_KEY;else process.env.ALPHA_VANTAGE_API_KEY=oldKey}
+  });
+}
