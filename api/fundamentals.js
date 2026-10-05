@@ -69,8 +69,9 @@ export default async function handler(req,res){
       fundamentals.push({ticker,ok:false,source:'Alpha Vantage',rateLimited:isRate,error:msg});
       if(isRate){
         rateLimited=true;
-        const daily=/per day|daily|a day/i.test(msg);
-        const frequency=/per second|per minute|frequency/i.test(msg);
+        const mentionsDaily=/per day|daily|a day/i.test(msg);
+        const frequency=/per second|per minute|frequency|per-second/i.test(msg);
+        const daily=mentionsDaily&&!frequency;
         const retryAfterSeconds=daily?86400:frequency?60:300;
         providerLimit={type:daily?'DAILY_QUOTA':frequency?'FREQUENCY':'UNKNOWN',message:msg,retryAfterSeconds,retryAt:new Date(Date.now()+retryAfterSeconds*1000).toISOString(),retryPolicy:'CONSERVATIVE_BACKOFF'};
         break;
