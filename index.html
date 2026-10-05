@@ -4570,13 +4570,15 @@ Gates pendentes: ${pend}.`);
    const FUND_CACHE_KEY='NCI_FUNDAMENTALS_SYNC_V1';
    const validRows=new Map();
    const pendingReasons={};
+   let providerLimit=null;
    let data={configured:true,source:'Alpha Vantage',rateLimited:false};
    const addReason=reason=>{pendingReasons[reason]=(pendingReasons[reason]||0)+1};
    const saveCache=()=>{
-     try{localStorage.setItem(FUND_CACHE_KEY,JSON.stringify({rows:[...validRows.values()]}))}catch(_){}
+     try{localStorage.setItem(FUND_CACHE_KEY,JSON.stringify({rows:[...validRows.values()],providerLimit}))}catch(_){}
    };
    try{
      const prev=JSON.parse(localStorage.getItem(FUND_CACHE_KEY)||'null');
+     if(Date.parse(prev?.providerLimit?.retryAt||'')>Date.now()){providerLimit=prev.providerLimit;data.rateLimited=true;}
      for(const row of Array.isArray(prev?.rows)?prev.rows:[]){
        const x=findTargets(row?.ticker)[0];
        const retrievedAt=row?.provenance?.retrievedAt;
@@ -4589,7 +4591,7 @@ Gates pendentes: ${pend}.`);
    const tickers=plan.assets.map(x=>x.ticker).filter(ticker=>!validRows.has(ticker));
    let transportReason=null,transportError=null;
    try{
-     for(let i=0;i<tickers.length;i+=3){
+     for(let i=0;!providerLimit&&i<tickers.length;i+=3){
        const batch=tickers.slice(i,i+3);
        const part=await backendJSON('/api/fundamentals?symbols='+encodeURIComponent(batch.join(',')),20000);
        data={configured:data.configured&&!!part?.configured,source:part?.source||data.source,rateLimited:data.rateLimited||part?.rateLimited===true};
@@ -4605,6 +4607,7 @@ Gates pendentes: ${pend}.`);
            addReason(reason);
          }
        }
+       if(part?.rateLimited)providerLimit=part.providerLimit||{type:'UNKNOWN',retryAt:new Date(Date.now()+300000).toISOString(),message:'Provider rate limit'};
        // Persist successful batches even if a later request times out.
        saveCache();
        if(part?.rateLimited||!part?.configured)break;
@@ -4636,7 +4639,7 @@ Gates pendentes: ${pend}.`);
    window.NCI_PORTFOLIO_FUNDAMENTALS={coverage,rows:[...validRows.values()],decisionStatus:'REVIEW_PENDING',writeOperationsEnabled:false};
    recalculateRadarBuyScores();
    const dominantReason=Object.entries(pendingReasons).sort((a,b)=>b[1]-a[1])[0]?.[0]||null;
-   return{status:failed?(updated?'PARTIAL':'PENDING'):(tickers.length?'OK':'CACHED'),updated,failed,coverage,configured:data.configured,source:data.source,pendingReasons,dominantReason,...(transportError?{error:transportError}:{})};
+   return{status:failed?(updated?'PARTIAL':'PENDING'):(tickers.length?'OK':'CACHED'),updated,failed,coverage,configured:data.configured,source:data.source,providerLimit,pendingReasons,dominantReason,...(transportError?{error:transportError}:{})};
  }
 
  function normalizeRadar(){
@@ -4729,7 +4732,7 @@ Gates pendentes: ${pend}.`);
        setButton('nci-warn','⚠ Mercado 0/'+market.total+' · feed indisponível');
      }
      const coverageText=fundamental.coverage?' · Ações da carteira '+fundamental.coverage.portfolio.verified+'/'+fundamental.coverage.portfolio.total+' · Radar '+fundamental.coverage.radar.verified+'/'+fundamental.coverage.radar.total+' · ETFs/caixa: revisão específica · Teses e valuations pendentes':'';
-     btn.title='Gateway NCI: https://north-capital-intelligence-data-gat.vercel.app · Fontes: '+sourceText+' · '+fundText+coverageText;
+     btn.title='Gateway NCI: https://north-capital-intelligence-data-gat.vercel.app · Fontes: '+sourceText+' · '+fundText+coverageText+(fundamental.providerLimit?' · Limite: '+({DAILY_QUOTA:'cota diária',FREQUENCY:'frequência',UNKNOWN:'tipo não informado'}[fundamental.providerLimit.type]||'tipo não informado')+' · Nova tentativa após '+new Date(fundamental.providerLimit.retryAt).toLocaleString('pt-BR')+' · '+(fundamental.providerLimit.message||''):'');
    }catch(e){
      console.error('NCI Full Update',e);
      setButton('nci-warn','⚠ Falha na atualização');
