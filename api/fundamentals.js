@@ -47,6 +47,7 @@ export default async function handler(req,res){
 
   const fundamentals=[];
   let rateLimited=false;
+  let providerLimit=null;
 
   for(let i=0;i<symbols.length;i++){
     const ticker=symbols[i];
@@ -66,7 +67,14 @@ export default async function handler(req,res){
       const msg=String(e?.message||e);
       const isRate=/frequency|rate|limit|requests per second|API call/i.test(msg);
       fundamentals.push({ticker,ok:false,source:'Alpha Vantage',rateLimited:isRate,error:msg});
-      if(isRate){ rateLimited=true; break; }
+      if(isRate){
+        rateLimited=true;
+        const daily=/per day|daily|a day/i.test(msg);
+        const frequency=/per second|per minute|frequency/i.test(msg);
+        const retryAfterSeconds=daily?86400:frequency?60:300;
+        providerLimit={type:daily?'DAILY_QUOTA':frequency?'FREQUENCY':'UNKNOWN',message:msg,retryAfterSeconds,retryAt:new Date(Date.now()+retryAfterSeconds*1000).toISOString(),retryPolicy:'CONSERVATIVE_BACKOFF'};
+        break;
+      }
     }
     if(i<symbols.length-1) await sleep(MIN_INTERVAL_MS);
   }
@@ -96,6 +104,7 @@ export default async function handler(req,res){
     provenancePolicy:{schemaVersion:'NCI_FUNDAMENTALS_PROVENANCE_V1',maxRetrievalAgeHours:36,maxReportedPeriodAgeDays:200},
     minIntervalMs:MIN_INTERVAL_MS,
     rateLimited,
+    providerLimit,
     complete,
     fundamentals
   });
