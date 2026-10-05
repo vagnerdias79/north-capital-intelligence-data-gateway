@@ -28,7 +28,7 @@ test('API preserves missing provider values and legitimate zeros',async()=>{
   }
 });
 
-for(const [message,type] of [['API call frequency exceeded per minute','FREQUENCY'],['Our standard API rate limit is 25 requests per day','DAILY_QUOTA'],['API rate limit reached','UNKNOWN']]){
+for(const [message,type] of [['API call frequency exceeded per minute','FREQUENCY'],['Our standard API rate limit is 25 requests per day','DAILY_QUOTA'],['API rate limit reached','UNKNOWN'],['Please spread requests (1 request per second); lift the free key rate limit (25 requests per day)','FREQUENCY']]){
   test('Provider limit classification: '+type,async()=>{
     const oldFetch=globalThis.fetch,oldKey=process.env.ALPHA_VANTAGE_API_KEY;
     process.env.ALPHA_VANTAGE_API_KEY='test-only';
