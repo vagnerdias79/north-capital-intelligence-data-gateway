@@ -1756,11 +1756,7 @@ function renderPortfolioSummary(){
    <div class="pf-summary-card"><span>Estrutura RV</span><strong>${equity?pct(etf/equity):'—'} / ${equity?pct(stocks/equity):'—'}</strong><small>ETF / Stocks · alvo 55/45</small></div>
    <div class="pf-summary-card"><span>Caixa USD</span><strong>${money(cash)}</strong><small>TFLO · residual</small></div>`;
 }
-function renderPortfolio(){
- const q=$("#searchPortfolio").value.toLowerCase(),t=$("#filterType").value;
- const list=PORT.filter(x=>(!q||(x.ticker+" "+x.name).toLowerCase().includes(q))&&(!t||x.type===t));
- $("#portfolioTable").innerHTML=portfolioRows(list);
- renderPortfolioSummary();
+function renderPortfolioFundamentalsCoverage(){
  const coverage=window.NCI_PORTFOLIO_FUNDAMENTALS?.coverage;
  const note=document.getElementById('portfolioFundamentalsCoverage');
  if(note&&coverage){
@@ -1768,6 +1764,13 @@ function renderPortfolio(){
    note.textContent='Fundamentos das ações: '+c.verified+'/'+c.total+' verificados · '+c.pending.length+' pendentes. ETFs e caixa: revisão específica. Teses e valuations em revisão.';
    note.title=c.pending.length?'Pendentes: '+c.pending.join(', '):'Cobertura de dados completa; não equivale a tese ou valuation aprovado.';
  }
+}
+function renderPortfolio(){
+ const q=$("#searchPortfolio").value.toLowerCase(),t=$("#filterType").value;
+ const list=PORT.filter(x=>(!q||(x.ticker+" "+x.name).toLowerCase().includes(q))&&(!t||x.type===t));
+ $("#portfolioTable").innerHTML=portfolioRows(list);
+ renderPortfolioSummary();
+ renderPortfolioFundamentalsCoverage();
 }
 $("#searchPortfolio").oninput=renderPortfolio;
 $("#filterType").onchange=renderPortfolio;
@@ -2979,6 +2982,7 @@ for(const [key,a] of Object.entries(originAnchors)){
    const list=PORT.filter(x=>(!q||(x.ticker+' '+x.name).toLowerCase().includes(q))&&(!t||x.type===t));
    $('#portfolioTable').innerHTML=portfolioRows(list);
    try{renderPortfolioSummary()}catch(e){}
+   renderPortfolioFundamentalsCoverage();
  };
  $('#searchPortfolio').oninput=renderPortfolio;$('#filterType').onchange=renderPortfolio;renderPortfolio();
  window.downloadBackup=function(){const master=window.NCI_DATABASE?.getState?window.NCI_DATABASE.getState():{...DB,ledger:rows,fxLedger:window.NCI_FX_USD||[]};dl('NCI_USD_1.0_master_backup.json',JSON.stringify({...master,ledgerCounts:window.NCI_LEDGER_COUNTS,architecture:'single-source-of-truth'},null,2))};
