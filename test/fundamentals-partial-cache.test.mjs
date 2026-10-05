@@ -46,3 +46,17 @@ test('portfolio pending data remain visible after provider limit',async()=>{
  assert.equal(result.coverage.portfolio.verified,0);
  assert.deepEqual(Array.from(result.coverage.portfolio.pending),['HELD']);
 });
+
+test('active portfolio renderer refreshes coverage after analytical update',()=>{
+ const note={textContent:'aguardando',title:''};
+ const coverageStart=html.indexOf('function renderPortfolioFundamentalsCoverage(){');
+ const coverageSource=html.slice(coverageStart,html.indexOf('\nfunction renderPortfolio(){',coverageStart));
+ const rendererStart=html.indexOf(' window.renderPortfolio=function(){');
+ const rendererSource=html.slice(rendererStart,html.indexOf('\n };',rendererStart)+4);
+ const elements={'#searchPortfolio':{value:''},'#filterType':{value:''},'#portfolioTable':{innerHTML:''}};
+ const context={window:{NCI_PORTFOLIO_FUNDAMENTALS:{coverage:{portfolio:{verified:2,total:15,pending:['MSFT','V']}}}},document:{getElementById:()=>note},PORT:[],portfolioRows:()=>'',renderPortfolioSummary:()=>{},$:selector=>elements[selector]};
+ vm.runInNewContext(coverageSource+';'+rendererSource,context);
+ context.window.renderPortfolio();
+ assert.match(note.textContent,/2\/15 verificados/);
+ assert.match(note.title,/MSFT, V/);
+});
