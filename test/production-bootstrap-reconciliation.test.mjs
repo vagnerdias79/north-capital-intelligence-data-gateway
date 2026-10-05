@@ -17,6 +17,8 @@ for(const [label,state] of [
       const pending=[];
       runInNewContext(scheduler+'scheduleAutomaticRefresh(state);',{
         state,run:()=>{runs++},
+        window:{NCI_FULL_UPDATE:{running:false}},
+        setInterval(callback,delay){assert.equal(delay,15*60*1000);},
         document:{readyState,addEventListener(event,callback,options){
           assert.equal(event,'DOMContentLoaded');assert.equal(options.once,true);pending.push(callback);
         }},queueMicrotask:callback=>pending.push(callback)
@@ -44,3 +46,17 @@ test('reconciles the frozen position anchor instead of post-baseline operations'
   assert.match(html,/postBaselineOperations:true/);
   assert.doesNotMatch(html,/function localPortfolio\(\)/);
 });
+
+ test('automatic refresh repeats every 15 minutes and skips overlapping runs',()=>{
+   let runs=0,tick;
+   const state={running:false};
+   runInNewContext(scheduler+'scheduleAutomaticRefresh(null);',{
+     run:()=>{runs++},window:{NCI_FULL_UPDATE:state},
+     document:{readyState:'complete'},queueMicrotask:callback=>callback(),
+     setInterval(callback,delay){assert.equal(delay,900000);tick=callback;}
+   });
+   assert.equal(runs,1);
+   tick();assert.equal(runs,2);
+   state.running=true;tick();assert.equal(runs,2);
+   state.running=false;tick();assert.equal(runs,3);
+ });
