@@ -7,8 +7,8 @@ const html=await readFile(new URL('../index.html',import.meta.url),'utf8');
 const start=html.indexOf(' async function refreshFundamentals(){');
 const source=html.slice(start,html.indexOf('\n function normalizeRadar(){',start));
 const row=(ticker,age=0)=>({ticker,ok:true,provenance:{schemaVersion:'NCI_FUNDAMENTALS_PROVENANCE_V1',retrievedAt:new Date(Date.now()-age).toISOString()}});
-function setup(cached,backend,portfolio=[]){
- let saved=JSON.stringify({rows:cached});const calls=[];
+function setup(cached,backend,portfolio=[],providerLimit=null){
+ let saved=JSON.stringify({rows:cached,providerLimit});const calls=[];
  const context={window:{NCIFundamentalsUniverse:{planFundamentals},PORT:portfolio,RADAR:['A','B','C','D'].map(ticker=>({ticker}))},DB:{},localStorage:{getItem:()=>saved,setItem:(_,value)=>{saved=value}},Date,Map,Number,JSON,applyFundamentalsRow:()=>true,recalculateRadarBuyScores:()=>{},backendJSON:async url=>{calls.push(decodeURIComponent(url.split('=')[1]));return backend(calls.length)}};
  return {run:vm.runInNewContext(source+';refreshFundamentals',context),calls,saved:()=>JSON.parse(saved).rows};
 }
@@ -59,4 +59,17 @@ test('active portfolio renderer refreshes coverage after analytical update',()=>
  context.window.renderPortfolio();
  assert.match(note.textContent,/2\/15 verificados/);
  assert.match(note.title,/MSFT, V/);
+});
+
+test('persisted provider cooldown skips calls while retaining verified rows',async()=>{
+ const providerLimit={type:'FREQUENCY',retryAt:new Date(Date.now()+60000).toISOString()};
+ const state=setup([row('A')],()=>{throw Error('unexpected provider call')},[],providerLimit);
+ const result=await state.run();
+ assert.equal(state.calls.length,0);assert.equal(result.updated,1);
+ assert.equal(result.dominantReason,'PROVIDER_LIMIT');
+ assert.equal(result.providerLimit.type,'FREQUENCY');
+});
+test('expired provider cooldown resumes remaining symbols',async()=>{
+ const state=setup([row('A')],()=>({configured:true,fundamentals:[row('B'),row('C'),row('D')]}),[],{retryAt:new Date(Date.now()-1000).toISOString()});
+ assert.equal((await state.run()).updated,4);assert.deepEqual(state.calls,['B,C,D']);
 });
