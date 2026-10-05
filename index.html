@@ -4803,7 +4803,12 @@ Gates pendentes: ${pend}.`);
  function scheduleAutomaticRefresh(restoredState){
    // Every opening follows the same refresh path as the manual button.
    // Cached data is only the initial snapshot, never a reason to skip synchronization.
-   const start=()=>run();
+   const start=()=>{
+     run();
+     setInterval(()=>{
+       if(!window.NCI_FULL_UPDATE.running)run();
+     },15*60*1000);
+   };
    if(document.readyState==='loading'){
      document.addEventListener('DOMContentLoaded',start,{once:true});
    }else{
