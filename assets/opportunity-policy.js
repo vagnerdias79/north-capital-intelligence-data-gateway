@@ -28,3 +28,25 @@
  }
  root.NCIOpportunityPolicy=Object.freeze({limits,tactical,evaluate,constrain});
 })(globalThis);
+
+/* Annual taxation screen uses the documented ledger without modifying it. */
+(function(){
+  const nav=document.getElementById('nav'),anchor=document.getElementById('policy');
+  if(!nav||!anchor||document.getElementById('taxation'))return;
+  const section=document.createElement('section');
+  section.id='taxation';section.className='screen';
+  section.innerHTML='<div id="taxationContent" aria-live="polite"><div class="card">Carregando Tributação…</div></div>';
+  anchor.before(section);
+  const button=document.createElement('button');button.type='button';
+  button.dataset.screen='taxation';button.textContent='▤ Tributação';
+  button.onclick=function(){
+    document.querySelectorAll('.nav button,.screen').forEach(x=>x.classList.remove('active'));
+    button.classList.add('active');section.classList.add('active');
+    document.getElementById('pageTitle').textContent='Tributação · Carteira USD';
+    window.NCIAnnualTax?.render();
+  };
+  nav.appendChild(button);
+  const script=document.createElement('script');script.src='/assets/annual-tax.js';
+  script.onerror=()=>{section.querySelector('#taxationContent').textContent='Não foi possível carregar Tributação. Atualize a página para tentar novamente.'};
+  document.body.appendChild(script);
+})();
