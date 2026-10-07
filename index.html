@@ -2800,6 +2800,8 @@ for(const [key,a] of Object.entries(originAnchors)){
  const header='<table><thead><tr><th>Prioridade</th><th>Destino</th><th>Gate operacional</th><th>Peso atual → projetado</th><th>Alocar</th><th>Qtd./Preço</th><th>Justificativa Policy</th></tr></thead><tbody>';
 
  function render(){
+   root.querySelector('#rbTfloValue').textContent=usd(currentTflo())+' em caixa USD';
+   root.querySelector('#rbPoolValue').textContent=usd(currentPool())+' disponíveis';
    const aporte=Math.max(0,Number(contribution.value)||0);
    const total=aporte+(includePool.checked?currentPool():0)+(includeTflo.checked?currentTflo():0);
    const result=allocate(total);
@@ -3661,6 +3663,7 @@ Gates pendentes: ${pend}.`);
    ...x,current:value(x),weight:equity?value(x)/equity*100:0
  })).sort((a,b)=>b.weight-a.weight);
  const stockBreaches=stockRows.filter(x=>x.weight>10.0001);
+ const etfBreaches=etfRows.filter(x=>x.weight>15.0001);
  const opportunity=window.NCIOpportunityPolicy.evaluate(PORT);
  const entry=RADAR.filter(x=>String(x.stage||'').toUpperCase()==='ENTRY CANDIDATE');
  const hold=PORT.filter(x=>x.type!=='Cash'&&x.capitalStatus==='HOLD_ONLY');
@@ -3719,6 +3722,7 @@ Gates pendentes: ${pend}.`);
    <div class="pc-rule-stack">
     <div class="pc-rule-card"><span>Ações individuais</span><b>Teto operacional de 10%</b><small>Calculado sobre a renda variável internacional projetada pós-aporte.</small></div>
     <div class="pc-rule-card"><span>ETFs de renda variável</span><b>Teto individual de 15%</b><small>Base: renda variável internacional projetada. TFLO é caixa; look-through e demais gates permanecem.</small></div>
+    <div class="pc-rule-card ${etfBreaches.length?'warn':''}"><span>ETFs acima de 15% hoje</span><b>${etfBreaches.length?etfBreaches.map(x=>`${x.ticker} ${pct1(x.weight)}`).join(' · '):'Nenhum'}</b><small>Acima do limite, novos aportes dependem de espaço na carteira projetada. Nenhuma venda automática.</small></div>
     <div class="pc-rule-card ${stockBreaches.length?'warn':''}"><span>Ações acima de 10% hoje</span><b>${stockBreaches.length?stockBreaches.map(x=>`${x.ticker} ${pct1(x.weight)}`).join(' · '):'Nenhuma'}</b><small>${stockBreaches.length?'Não há venda automática; novos aportes devem diluir a concentração.':'Regra respeitada pela carteira atual.'}</small></div>
    </div>
   </article>
@@ -3737,7 +3741,7 @@ Gates pendentes: ${pend}.`);
    <div class="pc-pos-groups">
     <div class="pc-pos-group">
      <div class="pc-pos-title"><b>ETFs</b><span>Teto 15%</span></div>
-     ${etfRows.map(x=>`<div class="pc-pos-row"><b>${x.ticker}</b><span>${pct1(x.weight)}</span><em>${x.capitalStatus||'—'}</em></div>`).join('')}
+     ${etfRows.map(x=>`<div class="pc-pos-row ${x.weight>15?'warn':''}"><b>${x.ticker}</b><span>${pct1(x.weight)}</span><em>${x.capitalStatus||'—'}</em></div>`).join('')}
     </div>
     <div class="pc-pos-group">
      <div class="pc-pos-title"><b>Stocks</b><span>Teto 10%</span></div>
