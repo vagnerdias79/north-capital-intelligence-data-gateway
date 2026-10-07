@@ -4627,7 +4627,7 @@ Gates pendentes: ${pend}.`);
            validRows.set(row.ticker,row);
            x.fundamentalsSyncError=null;
          }else{
-           const reason=row.rateLimited?'PROVIDER_LIMIT':row.ok?(x.dataStatus||'NOT_VERIFIED'):'PROVIDER_ERROR';
+           const reason=row.accessDenied?'PROVIDER_ACCESS_DENIED':row.rateLimited?'PROVIDER_LIMIT':row.ok?(x.dataStatus||'NOT_VERIFIED'):'PROVIDER_ERROR';
            findTargets(row.ticker).forEach(asset=>{asset.dataStatus=reason;asset.fundamentalsSyncError=row.error||null});
            addReason(reason);
          }
@@ -4737,12 +4737,12 @@ Gates pendentes: ${pend}.`);
        ?'fundamentos '+fundamental.updated+' verificados'+(fundamental.status==='CACHED'?' em cache':'')
        :fundamental.status==='PARTIAL'
          ?'fundamentos '+fundamental.updated+' verificados · '+Number(fundamental.failed||0)+' pendentes'+(fundamental.dominantReason?' ('+({
-           PROVIDER_LIMIT:'limite do provedor',PROVIDER_ERROR:'erro do provedor',UNKNOWN_DATE:'período não informado',
+           PROVIDER_ACCESS_DENIED:'acesso não autorizado pelo plano do provedor',PROVIDER_LIMIT:'limite do provedor',PROVIDER_ERROR:'erro do provedor',UNKNOWN_DATE:'período não informado',
            STALE_PERIOD:'período contábil vencido',STALE_RETRIEVAL:'consulta vencida',INCOMPLETE:'dados incompletos',
            NO_RESPONSE:'sem resposta',PROVIDER_NOT_CONFIGURED:'provedor não configurado'
          }[fundamental.dominantReason]||fundamental.dominantReason)+')':'')
          :'fundamentos 0 verificados · '+Number(fundamental.failed||0)+' pendentes'+(fundamental.dominantReason?' ('+({
-           PROVIDER_LIMIT:'limite do provedor',PROVIDER_ERROR:'erro do provedor',UNKNOWN_DATE:'período não informado',
+           PROVIDER_ACCESS_DENIED:'acesso não autorizado pelo plano do provedor',PROVIDER_LIMIT:'limite do provedor',PROVIDER_ERROR:'erro do provedor',UNKNOWN_DATE:'período não informado',
            STALE_PERIOD:'período contábil vencido',STALE_RETRIEVAL:'consulta vencida',INCOMPLETE:'dados incompletos',
            NO_RESPONSE:'sem resposta',PROVIDER_NOT_CONFIGURED:'provedor não configurado',
            TRANSPORT_TIMEOUT:'timeout da consulta',HTTP_ERROR:'erro HTTP',

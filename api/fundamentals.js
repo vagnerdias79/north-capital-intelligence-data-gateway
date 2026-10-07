@@ -65,8 +65,9 @@ export default async function handler(req,res){
       });
     }catch(e){
       const msg=String(e?.message||e);
-      const isRate=/frequency|rate|limit|requests per second|API call/i.test(msg);
-      fundamentals.push({ticker,ok:false,source:'Alpha Vantage',rateLimited:isRate,error:msg});
+      const accessDenied=/premium endpoint|premium-only|invalid api key|invalid apikey/i.test(msg);
+      const isRate=!accessDenied&&/frequency|rate|limit|requests per second|API call/i.test(msg);
+      fundamentals.push({ticker,ok:false,source:'Alpha Vantage',rateLimited:isRate,accessDenied,error:msg});
       if(isRate){
         rateLimited=true;
         const mentionsDaily=/per day|daily|a day/i.test(msg);
