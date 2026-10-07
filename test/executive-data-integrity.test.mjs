@@ -6,7 +6,8 @@ const html=await readFile(new URL('../index.html',import.meta.url),'utf8');
 const start=html.indexOf('<article class="nci-panel nci-executive">');
 const panel=html.slice(start,html.indexOf('</article>',start));
 const fn=html.slice(html.indexOf('  function concentrationSummary('),html.indexOf(' function render(){',html.indexOf('  function concentrationSummary(')));
-const summary=vm.runInNewContext(fn+';concentrationSummary');
+const policyContext={};vm.runInNewContext(await readFile(new URL('../assets/opportunity-policy.js',import.meta.url),'utf8'),policyContext);
+const summary=vm.runInNewContext(fn+';concentrationSummary',{window:policyContext});
 test('dashboard concentration excludes cash from weights and exempts ETFs from stock cap',()=>{
  const result=summary([{ticker:'A',type:'Stock',qty:1,price:11},{ticker:'ETF',type:'ETF',qty:1,price:89},{ticker:'TFLO',type:'Cash',qty:1,price:100}]);
  assert.equal(result.valid,true);assert.equal(result.base,100);assert.equal(result.cash,100);
@@ -21,5 +22,5 @@ test('dashboard panel contains computed concentration without unsupported rating
  assert.doesNotMatch(panel,/AUDITADO|North Score|STRONG|fundamentos sincronizados/);
  assert.doesNotMatch(html,/northScore:82/);
  assert.match(panel,/concentration.valid/);assert.match(panel,/concentration.breaches/);
- assert.match(panel,/ETFs isentos/);assert.match(panel,/excluindo TFLO/);
+ assert.match(panel,/ETFs: 15%/);assert.match(panel,/concentration.etfBreaches/);assert.match(panel,/concentration.tactical/);assert.match(panel,/excluindo TFLO/);
 });
