@@ -4596,14 +4596,14 @@ Gates pendentes: ${pend}.`);
    const validRows=new Map();
    const pendingReasons={};
    let providerLimit=null;
-   let data={configured:true,source:'Alpha Vantage',rateLimited:false};
+   let data={configured:true,source:'Alpha Vantage',rateLimited:false,accessDenied:false};
    const addReason=reason=>{pendingReasons[reason]=(pendingReasons[reason]||0)+1};
    const saveCache=()=>{
-     try{localStorage.setItem(FUND_CACHE_KEY,JSON.stringify({rows:[...validRows.values()],providerLimit}))}catch(_){}
+     try{localStorage.setItem(FUND_CACHE_KEY,JSON.stringify({rows:[...validRows.values()],providerLimit,diagnosticsVersion:2}))}catch(_){}
    };
    try{
      const prev=JSON.parse(localStorage.getItem(FUND_CACHE_KEY)||'null');
-     if(Date.parse(prev?.providerLimit?.retryAt||'')>Date.now()){providerLimit=prev.providerLimit;data.rateLimited=true;}
+     if(prev?.diagnosticsVersion===2&&Date.parse(prev?.providerLimit?.retryAt||'')>Date.now()){providerLimit=prev.providerLimit;data.rateLimited=true;}
      for(const row of Array.isArray(prev?.rows)?prev.rows:[]){
        const x=findTargets(row?.ticker)[0];
        const retrievedAt=row?.provenance?.retrievedAt;
@@ -4619,7 +4619,7 @@ Gates pendentes: ${pend}.`);
      for(let i=0;!providerLimit&&i<tickers.length;i+=3){
        const batch=tickers.slice(i,i+3);
        const part=await backendJSON('/api/fundamentals?symbols='+encodeURIComponent(batch.join(',')),20000);
-       data={configured:data.configured&&!!part?.configured,source:part?.source||data.source,rateLimited:data.rateLimited||part?.rateLimited===true};
+       data={configured:data.configured&&!!part?.configured,source:part?.source||data.source,rateLimited:data.rateLimited||part?.rateLimited===true,accessDenied:data.accessDenied||part?.accessDenied===true||(part?.fundamentals||[]).some(row=>row.accessDenied===true)};
        for(const row of Array.isArray(part?.fundamentals)?part.fundamentals:[]){
          const x=findTargets(row?.ticker)[0];
          if(!x||!batch.includes(row.ticker))continue;
@@ -4627,7 +4627,7 @@ Gates pendentes: ${pend}.`);
            validRows.set(row.ticker,row);
            x.fundamentalsSyncError=null;
          }else{
-           const reason=row.rateLimited?'PROVIDER_LIMIT':row.ok?(x.dataStatus||'NOT_VERIFIED'):'PROVIDER_ERROR';
+           const reason=row.accessDenied?'PROVIDER_ACCESS_DENIED':row.rateLimited?'PROVIDER_LIMIT':row.ok?(x.dataStatus||'NOT_VERIFIED'):'PROVIDER_ERROR';
            findTargets(row.ticker).forEach(asset=>{asset.dataStatus=reason;asset.fundamentalsSyncError=row.error||null});
            addReason(reason);
          }
@@ -4635,7 +4635,7 @@ Gates pendentes: ${pend}.`);
        if(part?.rateLimited)providerLimit=part.providerLimit||{type:'UNKNOWN',retryAt:new Date(Date.now()+300000).toISOString(),message:'Provider rate limit'};
        // Persist successful batches even if a later request times out.
        saveCache();
-       if(part?.rateLimited||!part?.configured)break;
+       if(data.accessDenied||part?.rateLimited||!part?.configured)break;
      }
    }catch(e){
      transportError=String(e?.message||e);
@@ -4644,14 +4644,14 @@ Gates pendentes: ${pend}.`);
    for(const entry of plan.assets){
      if(validRows.has(entry.ticker))continue;
      findTargets(entry.ticker).forEach(asset=>{
-       if(!pendingReasons[asset.dataStatus])asset.dataStatus=transportReason||(!data.configured?'PROVIDER_NOT_CONFIGURED':data.rateLimited?'PROVIDER_LIMIT':'NO_RESPONSE');
+       if(!pendingReasons[asset.dataStatus])asset.dataStatus=transportReason||(!data.configured?'PROVIDER_NOT_CONFIGURED':data.accessDenied?'PROVIDER_ACCESS_DENIED':data.rateLimited?'PROVIDER_LIMIT':'NO_RESPONSE');
      });
    }
    const updated=validRows.size,failed=plan.assets.length-updated;
    const explained=Object.values(pendingReasons).reduce((sum,n)=>sum+n,0);
    const missing=Math.max(0,failed-explained);
    if(missing){
-     const reason=transportReason||(!data.configured?'PROVIDER_NOT_CONFIGURED':data.rateLimited?'PROVIDER_LIMIT':'NO_RESPONSE');
+     const reason=transportReason||(!data.configured?'PROVIDER_NOT_CONFIGURED':data.accessDenied?'PROVIDER_ACCESS_DENIED':data.rateLimited?'PROVIDER_LIMIT':'NO_RESPONSE');
      pendingReasons[reason]=(pendingReasons[reason]||0)+missing;
    }
    saveCache();
@@ -4737,12 +4737,12 @@ Gates pendentes: ${pend}.`);
        ?'fundamentos '+fundamental.updated+' verificados'+(fundamental.status==='CACHED'?' em cache':'')
        :fundamental.status==='PARTIAL'
          ?'fundamentos '+fundamental.updated+' verificados · '+Number(fundamental.failed||0)+' pendentes'+(fundamental.dominantReason?' ('+({
-           PROVIDER_LIMIT:'limite do provedor',PROVIDER_ERROR:'erro do provedor',UNKNOWN_DATE:'período não informado',
+           PROVIDER_ACCESS_DENIED:'acesso não autorizado pelo plano do provedor',PROVIDER_LIMIT:'limite do provedor',PROVIDER_ERROR:'erro do provedor',UNKNOWN_DATE:'período não informado',
            STALE_PERIOD:'período contábil vencido',STALE_RETRIEVAL:'consulta vencida',INCOMPLETE:'dados incompletos',
            NO_RESPONSE:'sem resposta',PROVIDER_NOT_CONFIGURED:'provedor não configurado'
          }[fundamental.dominantReason]||fundamental.dominantReason)+')':'')
          :'fundamentos 0 verificados · '+Number(fundamental.failed||0)+' pendentes'+(fundamental.dominantReason?' ('+({
-           PROVIDER_LIMIT:'limite do provedor',PROVIDER_ERROR:'erro do provedor',UNKNOWN_DATE:'período não informado',
+           PROVIDER_ACCESS_DENIED:'acesso não autorizado pelo plano do provedor',PROVIDER_LIMIT:'limite do provedor',PROVIDER_ERROR:'erro do provedor',UNKNOWN_DATE:'período não informado',
            STALE_PERIOD:'período contábil vencido',STALE_RETRIEVAL:'consulta vencida',INCOMPLETE:'dados incompletos',
            NO_RESPONSE:'sem resposta',PROVIDER_NOT_CONFIGURED:'provedor não configurado',
            TRANSPORT_TIMEOUT:'timeout da consulta',HTTP_ERROR:'erro HTTP',

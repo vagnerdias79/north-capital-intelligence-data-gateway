@@ -46,3 +46,20 @@ for(const [message,type] of [['API call frequency exceeded per minute','FREQUENC
     }finally{globalThis.fetch=oldFetch;if(oldKey===undefined)delete process.env.ALPHA_VANTAGE_API_KEY;else process.env.ALPHA_VANTAGE_API_KEY=oldKey}
   });
 }
+
+ test('premium access restriction is not a temporary rate limit',async()=>{
+ const oldFetch=globalThis.fetch,oldKey=process.env.ALPHA_VANTAGE_API_KEY;
+ process.env.ALPHA_VANTAGE_API_KEY='test-only';let payload;
+ globalThis.fetch=async()=>({ok:true,json:async()=>({Information:'This is a premium endpoint. Subscribe to premium plans to remove rate limits.'})});
+ try{await handler({query:{symbols:'MSFT'}},{setHeader(){},status(){return this},json(v){payload=v}});
+ assert.equal(payload.rateLimited,false);assert.equal(payload.providerLimit,null);assert.equal(payload.fundamentals[0].accessDenied,true);assert.equal(payload.fundamentals[0].ok,false);
+ }finally{globalThis.fetch=oldFetch;if(oldKey===undefined)delete process.env.ALPHA_VANTAGE_API_KEY;else process.env.ALPHA_VANTAGE_API_KEY=oldKey}
+ });
+
+test('access restriction stops a batch after one request and defers remaining symbols',async()=>{
+ const oldFetch=globalThis.fetch,oldKey=process.env.ALPHA_VANTAGE_API_KEY;process.env.ALPHA_VANTAGE_API_KEY='test-only';let calls=0,payload;
+ globalThis.fetch=async()=>{calls++;return {ok:true,json:async()=>({Information:'This is a premium endpoint.'})}};
+ try{await handler({query:{symbols:'MSFT,NVDA,V'}},{setHeader(){},status(){return this},json(v){payload=v}});
+ assert.equal(calls,1);assert.equal(payload.accessDenied,true);assert.equal(payload.rateLimited,false);assert.equal(payload.fundamentals.length,3);assert.equal(payload.fundamentals[2].deferred,true);assert.equal(payload.fundamentals[2].accessDenied,true);
+ }finally{globalThis.fetch=oldFetch;if(oldKey===undefined)delete process.env.ALPHA_VANTAGE_API_KEY;else process.env.ALPHA_VANTAGE_API_KEY=oldKey}
+});

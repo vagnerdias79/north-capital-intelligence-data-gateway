@@ -48,6 +48,7 @@ export default async function handler(req,res){
   const fundamentals=[];
   let rateLimited=false;
   let providerLimit=null;
+  let accessRestricted=false;
 
   for(let i=0;i<symbols.length;i++){
     const ticker=symbols[i];
@@ -65,8 +66,10 @@ export default async function handler(req,res){
       });
     }catch(e){
       const msg=String(e?.message||e);
-      const isRate=/frequency|rate|limit|requests per second|API call/i.test(msg);
-      fundamentals.push({ticker,ok:false,source:'Alpha Vantage',rateLimited:isRate,error:msg});
+      const accessDenied=/premium endpoint|premium-only|invalid api key|invalid apikey/i.test(msg);
+      const isRate=!accessDenied&&/frequency|rate|limit|requests per second|API call/i.test(msg);
+      fundamentals.push({ticker,ok:false,source:'Alpha Vantage',rateLimited:isRate,accessDenied,error:msg});
+      if(accessDenied){accessRestricted=true;break;}
       if(isRate){
         rateLimited=true;
         const mentionsDaily=/per day|daily|a day/i.test(msg);
@@ -80,14 +83,14 @@ export default async function handler(req,res){
     if(i<symbols.length-1) await sleep(MIN_INTERVAL_MS);
   }
 
-  if(rateLimited && fundamentals.length<symbols.length){
+  if((rateLimited||accessRestricted) && fundamentals.length<symbols.length){
     const attempted=new Set(fundamentals.map(x=>x.ticker));
     for(const ticker of symbols){
       if(!attempted.has(ticker)){
         fundamentals.push({
           ticker,ok:false,source:'Alpha Vantage',
-          rateLimited:true,deferred:true,
-          error:'Deferred after provider rate limit; retry later.'
+          rateLimited:rateLimited,accessDenied:accessRestricted,deferred:true,
+          error:accessRestricted?'Deferred after provider access restriction; review provider plan or credentials.':'Deferred after provider rate limit; retry later.'
         });
       }
     }
@@ -106,6 +109,7 @@ export default async function handler(req,res){
     minIntervalMs:MIN_INTERVAL_MS,
     rateLimited,
     providerLimit,
+    accessDenied:accessRestricted,
     complete,
     fundamentals
   });
