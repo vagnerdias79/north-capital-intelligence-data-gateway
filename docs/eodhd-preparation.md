@@ -12,7 +12,7 @@ Sources: https://eodhd.com/financial-apis/stock-etfs-fundamental-data-feeds and 
 
 ## Endpoint
 
-GET `/api/v2/eodhd-fundamentals?symbol=MSFT`, with the existing Neon Bearer JWT. One approved NCI equity per request. BRK.B maps to BRK-B.US. ETFs are not supported by this equity adapter.
+GET `/api/fundamentals?provider=eodhd&symbol=MSFT`, with the existing Neon Bearer JWT. One approved NCI equity per request. BRK.B maps to BRK-B.US. ETFs are not supported by this equity adapter.
 
 All replies use `Cache-Control: private, no-store`. Identity verification precedes provider access. The verified subject must exactly match `EODHD_OWNER_SUBJECT`; authenticated users other than the owner are denied. Missing owner configuration fails closed. No raw errors or credential-bearing provider URLs are returned. Request timeout: 15 seconds; redirects forbidden.
 
@@ -21,7 +21,7 @@ Required server-only settings, after licensing and approval:
 - `EODHD_API_KEY`: provider credential. Never place it in browser code, fixtures or chat.
 - `EODHD_PREVIEW_ENABLED=true`: explicit activation, initially preview only. Disabled unless exact value is true.
 
-No environment variables are provisioned by this PR, and no paid calls are made during local tests. Test the authenticated route in a protected preview before adding it to the dashboard refresh cycle. Owner-only authorization must also cover any future cached data. Current public Alpha Vantage endpoint must not serve EODHD data.
+No environment variables are provisioned by this PR, and no paid calls are made during local tests. Test the authenticated route in a protected preview before adding it to the dashboard refresh cycle. Owner-only authorization must also cover any future cached data. The EODHD query branch in the existing function always enforces private authorization; the default Alpha Vantage branch is unchanged. Reusing this function stays within the current Vercel function-count limit.
 
 ## Data contract
 
