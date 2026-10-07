@@ -31,6 +31,7 @@
 
 /* Annual taxation screen uses the documented ledger without modifying it. */
 (function(){
+  if(typeof document==='undefined')return;
   const nav=document.getElementById('nav'),anchor=document.getElementById('policy');
   if(!nav||!anchor||document.getElementById('taxation'))return;
   const section=document.createElement('section');
