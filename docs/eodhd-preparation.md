@@ -4,11 +4,11 @@ This change prepares an isolated provider adapter. It does not replace Alpha Van
 
 ## Reviewed inputs
 
-MSFT, NVDA and BRK-B JSON supplied by EODHD support were checked locally: all nine planned metrics, separate reporting/trading currencies, dates and missing-value handling. Original samples are deliberately not committed or exposed as public assets. INTR sample remains pending; null PEG behavior is covered by a synthetic test, not claimed as validation of actual INTR data.
+MSFT, NVDA, BRK-B and INTR JSON supplied by EODHD support were checked locally: all nine planned metrics, separate reporting/trading currencies, dates and missing-value handling. Original samples are deliberately not committed or exposed as public assets. The corrected INTR sample and support response dated 2026-10-08 confirm Financials/Banks GICS classification and unavailable PEG. Summary ratios are supplied separately from statements. INTR profit margin remains 22.92% from Highlights; the separately calculated four-quarter margin is 22.75%, using netIncome / grossProfit as confirmed by support. No original licensed sample is published.
 
 The original `/api/fundamentals/{symbol}` endpoint matches these samples. Provider documentation recommends v1.1 for new integrations; upgrading is deferred until the v1.1 response is compared with the current mapping.
 
-Sources: https://eodhd.com/financial-apis/stock-etfs-fundamental-data-feeds and support correspondence dated 2026-10-07.
+Sources: https://eodhd.com/financial-apis/stock-etfs-fundamental-data-feeds and support correspondence dated 2026-10-07 and 2026-10-08.
 
 ## Endpoint
 
@@ -31,6 +31,8 @@ Latest reporting period is selected from released income-statement records with 
 
 Normalization is not independent accounting verification. Samples remain SAMPLE_ONLY and are not admitted to the existing provenance gate. Decision authorization and write operations remain false. The holdings allocation policy is unchanged; a 30% exit target discussed for the current INTR operation is not a general policy rule.
 
+Provider summary and statement calculations remain separate: data.profitMargin preserves Highlights.ProfitMargin; statementMetrics records denominator, method, currency and four consecutive released periods. INTR alone uses the support-confirmed grossProfit denominator. Missing periods, inconsistent currency or invalid denominators make the calculation unavailable. General.CountryName is explicitly listingCountry and never replaces dashboard geography. These calculations are internal reconciliation, not independent issuer verification.
+
 ## Validation
 
-131 tests passed: existing 121 plus 10 adapter/access tests. Three actual supplied samples were exercised locally without publication. Live subscription access, INTR payload, v1.1 compatibility and end-to-end dashboard integration remain to be validated before activation.
+Automated adapter/access tests cover summary separation, INTR denominator, missing and nonconsecutive quarters, currency mismatches and negative net income. Four supplied samples were exercised locally without publication. Live subscription access, real owner JWT, v1.1 compatibility and end-to-end dashboard integration remain to be validated before activation.
