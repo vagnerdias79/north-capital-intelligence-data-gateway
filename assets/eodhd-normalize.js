@@ -65,11 +65,22 @@ export function normalize(ticker,raw,{retrievedAt=new Date().toISOString(),sampl
   const latest=published[0]||null;
   const earnings=latest?history.find(row=>row.date===latest.date&&number(row.epsActual)!==null&&date(row.reportDate)&&Date.parse(row.reportDate)<=now):null;
   const missingMetrics=Object.keys(metricPaths).filter(field=>data[field]===null);
+  const periodAgeDays=latest?(now-Date.parse(latest.date))/86400000:null;
+  const updated=date(raw.General.UpdatedAt);
+  const issues=[];
+  if(!latest)issues.push('UNKNOWN_REPORTING_PERIOD');
+  else if(periodAgeDays>200)issues.push('STALE_REPORTING_PERIOD');
+  if(!updated)issues.push('UNKNOWN_PROVIDER_UPDATE');
+  else if(Date.parse(updated)>now)issues.push('FUTURE_PROVIDER_UPDATE');
+  if(missingMetrics.length)issues.push('MISSING_METRICS');
   return {
     ticker:expected==='BRK-B'?'BRK.B':expected,ok:true,source:'EODHD',data,
     providerSummary:{profitMargin:data.profitMargin,source:metricPaths.profitMargin,statementBasisReconciled:false},
     statementMetrics:statementMargin(expected,published,statements),
     validation:{mode:sample?'SAMPLE_ONLY':'PROVIDER_PAYLOAD',missingMetrics,decisionAuthorization:false},
+    dataHealth:{issues,periodAgeDays,maxReportedPeriodAgeDays:200,
+      periodStatus:!latest?'UNKNOWN':periodAgeDays>200?'STALE':'WITHIN_AGE_LIMIT',
+      summaryPeriodVerified:false,operationallyReady:false},
     provenance:{schemaVersion:'NCI_FUNDAMENTALS_PROVENANCE_V1',provider:'EODHD',dataset:'FUNDAMENTALS',
       retrievedAt:new Date(now).toISOString(),sourcePeriodEnd:latest?.date||null,
       sourcePublishedAt:earnings?.reportDate||latest?.filing_date||null,filingDate:latest?.filing_date||null,

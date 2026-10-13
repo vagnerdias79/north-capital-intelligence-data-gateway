@@ -41,6 +41,7 @@ export function mountSampleReview(root,getToken) {
           panel.append(table);
           const calc=row.statementMetrics;
           panel.append(element('p',calc.status==='CALCULATED'?`Margem calculada pelos demonstrativos: ${(calc.profitMargin*100).toFixed(2)}% · Método: ${calc.method} · Moeda: ${calc.reportingCurrency} · Períodos: ${calc.periods.join(', ')}`:`Margem calculada indisponível: ${calc.reason}`));
+          panel.append(element('p',`Diagnóstico: ${row.dataHealth.issues.join(', ')||'sem pendências estruturais detectadas'} · Limite do período: ${row.dataHealth.maxReportedPeriodAgeDays} dias. O período do resumo Highlights não foi verificado.`));
           panel.append(element('p','Validação estrutural local. Sem verificação independente da empresa, atualização automática ou autorização de decisões.'));
           results.append(panel);valid++;
         }catch{results.append(element('p',`${file.name}: arquivo inválido ou ativo não suportado. Nenhum dado aplicado.`));failed++;}

@@ -44,3 +44,7 @@ Open auth-test.html, sign in with Google and click “Validar acesso EODHD”. T
 ## Local sample review
 
 The authenticated test page accepts up to four support JSON samples (5 MB each). Owner authentication is checked before local file reading. Files are never uploaded, cached or stored. The browser and server share assets/eodhd-normalize.js to avoid divergent formulas. Summary metrics and reconciled margin display separately with reporting periods, source paths and currencies. Missing values remain unavailable; samples are SAMPLE_ONLY, operationallyReady=false and never enter Radar or portfolio state. The review validates structure, not issuer accuracy, provider subscription or real-time freshness. Automated suite: 137 tests passed. Paid subscription stays a final activation stage; commercial redistribution licensing remains separate.
+
+## Failure and age diagnostics
+
+Accounting periods older than the existing NCI 200-day limit are STALE; missing released periods are UNKNOWN. Missing/future provider update dates and missing metrics are explicit issues. Highlights summary period is not inferred from income statement dates (summaryPeriodVerified=false). Local import time cannot establish that a support sample is current. These diagnostic fields never authorize Radar or operational use. Network failures are sanitized PROVIDER_UNAVAILABLE; timeout/abort is PROVIDER_TIMEOUT. No automatic retry is performed. Existing tests cover denied subscription, rate limit, invalid JSON, authentication and missing configuration; suite totals 140 passing tests.
