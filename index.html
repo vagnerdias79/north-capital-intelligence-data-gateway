@@ -4900,6 +4900,7 @@ Gates pendentes: ${pend}.`);
 #nciDataLayerStatus.nci-dl-bad{border-color:#7f3d45;color:#ff9ba7}
 </style>
 <script type="module" id="nci-data-layer-shadow-r1-runtime">
+import { mountDashboardDiagnostic } from './assets/eodhd-dashboard.js';
 import { createAuthClient } from 'https://esm.sh/@neondatabase/auth';
 
 const NCI_DL = Object.freeze({
@@ -4982,6 +4983,7 @@ async function initShadowReadOnly(){
     if(!cfgResp.ok || !cfg?.ok) throw new Error(cfg?.error||'AUTH_CONFIG_UNAVAILABLE');
 
     const auth=createAuthClient(cfg.authBaseUrl);
+    mountDashboardDiagnostic(async()=>findJwt(await auth.getSession()));
     const sessionResult=await auth.getSession();
     const session=sessionResult?.data ?? sessionResult ?? null;
     const user=session?.user ?? null;
