@@ -1,3 +1,4 @@
+import {mountRefreshPreparation} from './eodhd-refresh.js';
 export function diagnosticState(result, httpStatus=200) {
   if(httpStatus===401)return {status:'LOGIN_REQUIRED',label:'EODHD · entrar',message:'Sessão ausente ou expirada. Entre pela página de autenticação.'};
   if(httpStatus===403)return {status:'OWNER_ONLY',label:'EODHD · acesso restrito',message:'Esta sessão não corresponde ao titular configurado.'};
@@ -32,4 +33,5 @@ export function mountDashboardDiagnostic(getToken) {
     finally{button.disabled=false;}
   });
   bar.append(button);
+  mountRefreshPreparation(bar,getToken);
 }
