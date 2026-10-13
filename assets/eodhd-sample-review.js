@@ -1,10 +1,11 @@
+import { assessRadarCandidate } from './eodhd-radar-guard.js';
 import { normalize, metricPaths } from './eodhd-normalize.js';
 export function reviewSample(raw, retrievedAt=new Date().toISOString()) {
   const code=raw?.General?.Code;
   if(typeof code!=='string')throw new Error('Arquivo sem identificação do ativo.');
   const row=normalize(code,raw,{retrievedAt,sample:true});
   return {...row,reviewStatus:row.validation.missingMetrics.length?'INCOMPLETE':'STRUCTURALLY_VALID',
-    operationallyReady:false};
+    operationallyReady:false,radarGate:assessRadarCandidate(row,{now:retrievedAt})};
 }
 const labels={profitMargin:'Margem líquida do provedor',operatingMargin:'Margem operacional',returnOnEquity:'ROE',revenueGrowthYoY:'Crescimento da receita',earningsGrowthYoY:'Crescimento do lucro',forwardPE:'P/L futuro',peg:'PEG',priceToSales:'Preço/receita',analystTargetPrice:'Preço-alvo'};
 const percentFields=new Set(['profitMargin','operatingMargin','returnOnEquity','revenueGrowthYoY','earningsGrowthYoY']);
@@ -41,6 +42,7 @@ export function mountSampleReview(root,getToken) {
           panel.append(table);
           const calc=row.statementMetrics;
           panel.append(element('p',calc.status==='CALCULATED'?`Margem calculada pelos demonstrativos: ${(calc.profitMargin*100).toFixed(2)}% · Método: ${calc.method} · Moeda: ${calc.reportingCurrency} · Períodos: ${calc.periods.join(', ')}`:`Margem calculada indisponível: ${calc.reason}`));
+          panel.append(element('p',`Radar: BLOQUEADO para decisões · Motivos: ${row.radarGate.reasons.join(', ')} · Grupos insuficientes: ${Object.entries(row.radarGate.groupAssessment).filter(([,group])=>!group.complete).map(([name])=>name).join(', ')||'nenhum'}`));
           panel.append(element('p',`Diagnóstico: ${row.dataHealth.issues.join(', ')||'sem pendências estruturais detectadas'} · Limite do período: ${row.dataHealth.maxReportedPeriodAgeDays} dias. O período do resumo Highlights não foi verificado.`));
           panel.append(element('p','Validação estrutural local. Sem verificação independente da empresa, atualização automática ou autorização de decisões.'));
           results.append(panel);valid++;

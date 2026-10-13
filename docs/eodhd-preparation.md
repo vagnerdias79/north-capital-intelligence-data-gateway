@@ -48,3 +48,7 @@ The authenticated test page accepts up to four support JSON samples (5 MB each).
 ## Failure and age diagnostics
 
 Accounting periods older than the existing NCI 200-day limit are STALE; missing released periods are UNKNOWN. Missing/future provider update dates and missing metrics are explicit issues. Highlights summary period is not inferred from income statement dates (summaryPeriodVerified=false). Local import time cannot establish that a support sample is current. These diagnostic fields never authorize Radar or operational use. Network failures are sanitized PROVIDER_UNAVAILABLE; timeout/abort is PROVIDER_TIMEOUT. No automatic retry is performed. Existing tests cover denied subscription, rate limit, invalid JSON, authentication and missing configuration; suite totals 140 passing tests.
+
+## Radar shadow gate
+
+The API and local sample review now expose radarGate from the existing NCI provenance evaluator without changing its provider trust list or minimum group rules. EODHD remains unadmitted and samples stay blocked. Stale/missing/future dates and insufficient groups are listed separately. Missing PEG in INTR is visible but does not itself fail the existing valuation minimum of two fields; it never becomes zero. The guard always returns eligible=false and decisionAuthorization=false during preparation. No production Radar renderer, scoring or cache is modified. Suite: 144 passing tests.
