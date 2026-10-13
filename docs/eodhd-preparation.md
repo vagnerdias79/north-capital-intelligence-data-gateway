@@ -36,3 +36,7 @@ Provider summary and statement calculations remain separate: data.profitMargin p
 ## Validation
 
 Automated adapter/access tests cover summary separation, INTR denominator, missing and nonconsecutive quarters, currency mismatches and negative net income. Four supplied samples were exercised locally without publication. Live subscription access, real owner JWT, v1.1 compatibility and end-to-end dashboard integration remain to be validated before activation.
+
+## Authentication-only preview test
+
+Open auth-test.html, sign in with Google and click “Validar acesso EODHD”. The existing endpoint with provider=eodhd&mode=auth-test validates the real JWT, reports owner configuration separately, and makes zero provider calls even when paid access is enabled. The page also checks that a request without Bearer is rejected with 401. Missing owner configuration is PARTIAL, never PASS. Other configured subjects are denied. No JWT is displayed or persisted by this test. Subscription/data validation is a separate later step. Automated suite: 136 tests passed.
