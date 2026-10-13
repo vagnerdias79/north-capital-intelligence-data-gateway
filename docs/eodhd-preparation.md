@@ -40,3 +40,7 @@ Automated adapter/access tests cover summary separation, INTR denominator, missi
 ## Authentication-only preview test
 
 Open auth-test.html, sign in with Google and click “Validar acesso EODHD”. The existing endpoint with provider=eodhd&mode=auth-test validates the real JWT, reports owner configuration separately, and makes zero provider calls even when paid access is enabled. The page also checks that a request without Bearer is rejected with 401. Missing owner configuration is PARTIAL, never PASS. Other configured subjects are denied. No JWT is displayed or persisted by this test. Subscription/data validation is a separate later step. Automated suite: 136 tests passed.
+
+## Local sample review
+
+The authenticated test page accepts up to four support JSON samples (5 MB each). Owner authentication is checked before local file reading. Files are never uploaded, cached or stored. The browser and server share assets/eodhd-normalize.js to avoid divergent formulas. Summary metrics and reconciled margin display separately with reporting periods, source paths and currencies. Missing values remain unavailable; samples are SAMPLE_ONLY, operationallyReady=false and never enter Radar or portfolio state. The review validates structure, not issuer accuracy, provider subscription or real-time freshness. Automated suite: 137 tests passed. Paid subscription stays a final activation stage; commercial redistribution licensing remains separate.

@@ -39,10 +39,12 @@ pre{white-space:pre-wrap;word-break:break-word;background:#06111d;border:1px sol
 <button id="eodhdAuthTest" class="secondary" hidden>Validar acesso EODHD</button>
 <button id="logout" class="secondary" hidden>Sair</button>
 </p>
+<section id="eodhdSamples" hidden></section>
 <pre id="out"></pre>
 </div>
 
 <script type="module">
+import { mountSampleReview } from './assets/eodhd-sample-review.js';
 import { createAuthClient } from 'https://esm.sh/@neondatabase/auth';
 
 const $ = id => document.getElementById(id);
@@ -114,6 +116,10 @@ async function init(){
       monitorTax.hidden=false;
       closeTax.hidden=false;
       document.getElementById("eodhdAuthTest").hidden=false;
+      mountSampleReview(document.getElementById('eodhdSamples'),async()=>{
+        lastSessionResult=await auth.getSession();
+        return findJwt(lastSessionResult);
+      });
       logout.hidden=false;
     }else{
       status.innerHTML='<span class="warn">Nenhuma sessão ativa.</span>';
