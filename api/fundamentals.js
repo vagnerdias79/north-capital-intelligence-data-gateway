@@ -1,3 +1,8 @@
+import { createHandler } from '../lib/providers/eodhd-handler.js';
+const eodhdHandler=createHandler({authenticate:async req=>{
+  const { requireNeonIdentity }=await import('../lib/auth-jwt.js');
+  return requireNeonIdentity(req);
+}});
 const UA='NorthCapitalIntelligence/1.0';
 const MIN_INTERVAL_MS=1250;
 function clean(s){ return String(s||'').trim().toUpperCase().replace(/[^A-Z0-9.^-]/g,''); }
@@ -38,6 +43,7 @@ async function overview(ticker,key){
 }
 
 export default async function handler(req,res){
+  if(req.query?.provider==='eodhd')return eodhdHandler(req,res);
   const key=process.env.ALPHA_VANTAGE_API_KEY;
   const symbols=[...new Set(String(req.query.symbols||'').split(',').map(clean).filter(Boolean))].slice(0,20);
   const asOf=new Date().toISOString();
@@ -114,3 +120,4 @@ export default async function handler(req,res){
     fundamentals
   });
 }
+

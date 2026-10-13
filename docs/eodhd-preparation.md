@@ -1,0 +1,58 @@
+# EODHD preparation — private, read-only
+
+This change prepares an isolated provider adapter. It does not replace Alpha Vantage, modify the dashboard, trust EODHD for Radar scoring, or change positions, transactions or tax records.
+
+## Reviewed inputs
+
+MSFT, NVDA, BRK-B and INTR JSON supplied by EODHD support were checked locally: all nine planned metrics, separate reporting/trading currencies, dates and missing-value handling. Original samples are deliberately not committed or exposed as public assets. The corrected INTR sample and support response dated 2026-10-08 confirm Financials/Banks GICS classification and unavailable PEG. Summary ratios are supplied separately from statements. INTR profit margin remains 22.92% from Highlights; the separately calculated four-quarter margin is 22.75%, using netIncome / grossProfit as confirmed by support. No original licensed sample is published.
+
+The original `/api/fundamentals/{symbol}` endpoint matches these samples. Provider documentation recommends v1.1 for new integrations; upgrading is deferred until the v1.1 response is compared with the current mapping.
+
+Sources: https://eodhd.com/financial-apis/stock-etfs-fundamental-data-feeds and support correspondence dated 2026-10-07 and 2026-10-08.
+
+## Endpoint
+
+GET `/api/fundamentals?provider=eodhd&symbol=MSFT`, with the existing Neon Bearer JWT. One approved NCI equity per request. BRK.B maps to BRK-B.US. ETFs are not supported by this equity adapter.
+
+All replies use `Cache-Control: private, no-store`. Identity verification precedes provider access. The verified subject must exactly match `EODHD_OWNER_SUBJECT`; authenticated users other than the owner are denied. Missing owner configuration fails closed. No raw errors or credential-bearing provider URLs are returned. Request timeout: 15 seconds; redirects forbidden.
+
+Required server-only settings, after licensing and approval:
+- `EODHD_OWNER_SUBJECT`: verified Neon subject of the license holder.
+- `EODHD_API_KEY`: provider credential. Never place it in browser code, fixtures or chat.
+- `EODHD_PREVIEW_ENABLED=true`: explicit activation, initially preview only. Disabled unless exact value is true.
+
+The code does not provision environment variables. On 2026-10-13 EODHD_OWNER_SUBJECT was configured only for the preview branch; no provider key or activation flag was configured. No paid calls were made. Test the authenticated route in a protected preview before adding it to the dashboard refresh cycle. Owner-only authorization must also cover any future cached data. The EODHD query branch in the existing function always enforces private authorization; the default Alpha Vantage branch is unchanged. Reusing this function stays within the current Vercel function-count limit.
+
+## Data contract
+
+Ratios retain native decimal units; the UI can multiply by 100 for percentages. Numeric strings convert to numbers; null, empty strings, booleans and invalid numbers remain null. Nonpositive valuation ratios/target prices remain unavailable. Missing metrics are listed explicitly.
+
+Latest reporting period is selected from released income-statement records with valid period/filing dates and revenue/net income; future or unpublished records are excluded. Retrieval date, provider update date, fiscal period, filing date and earnings report date are separate. No ADR ratio is fabricated. Forward PE, PEG and analyst target are identified as estimate-based fields.
+
+Normalization is not independent accounting verification. Samples remain SAMPLE_ONLY and are not admitted to the existing provenance gate. Decision authorization and write operations remain false. The holdings allocation policy is unchanged; a 30% exit target discussed for the current INTR operation is not a general policy rule.
+
+Provider summary and statement calculations remain separate: data.profitMargin preserves Highlights.ProfitMargin; statementMetrics records denominator, method, currency and four consecutive released periods. INTR alone uses the support-confirmed grossProfit denominator. Missing periods, inconsistent currency or invalid denominators make the calculation unavailable. General.CountryName is explicitly listingCountry and never replaces dashboard geography. These calculations are internal reconciliation, not independent issuer verification.
+
+## Validation
+
+Automated adapter/access tests cover summary separation, INTR denominator, missing and nonconsecutive quarters, currency mismatches and negative net income. Four supplied samples were exercised locally without publication. The owner validated the real JWT, anonymous rejection and four local sample results on 2026-10-13. Live subscription access, v1.1 compatibility and end-to-end dashboard integration remain pending.
+
+## Authentication-only preview test
+
+Open auth-test.html, sign in with Google and click “Validar acesso EODHD”. The existing endpoint with provider=eodhd&mode=auth-test validates the real JWT, reports owner configuration separately, and makes zero provider calls even when paid access is enabled. The page also checks that a request without Bearer is rejected with 401. Missing owner configuration is PARTIAL, never PASS. Other configured subjects are denied. No JWT is displayed or persisted by this test. Subscription/data validation is a separate later step. 
+
+## Local sample review
+
+The authenticated test page accepts up to four support JSON samples (5 MB each). Owner authentication is checked before local file reading. Files are never uploaded, cached or stored. The browser and server share assets/eodhd-normalize.js to avoid divergent formulas. Summary metrics and reconciled margin display separately with reporting periods, source paths and currencies. Missing values remain unavailable; samples are SAMPLE_ONLY, operationallyReady=false and never enter Radar or portfolio state. The review validates structure, not issuer accuracy, provider subscription or real-time freshness.  Paid subscription stays a final activation stage; commercial redistribution licensing remains separate.
+
+## Failure and age diagnostics
+
+Accounting periods older than the existing NCI 200-day limit are STALE; missing released periods are UNKNOWN. Missing/future provider update dates and missing metrics are explicit issues. Highlights summary period is not inferred from income statement dates (summaryPeriodVerified=false). Local import time cannot establish that a support sample is current. These diagnostic fields never authorize Radar or operational use. Network failures are sanitized PROVIDER_UNAVAILABLE; timeout/abort is PROVIDER_TIMEOUT. No automatic retry is performed. Existing tests cover denied subscription, rate limit, invalid JSON, authentication and missing configuration; the final suite totals 144 passing tests.
+
+## Radar shadow gate
+
+The API and local sample review now expose radarGate from the existing NCI provenance evaluator without changing its provider trust list or minimum group rules. EODHD remains unadmitted and samples stay blocked. Stale/missing/future dates and insufficient groups are listed separately. Missing PEG in INTR is visible but does not itself fail the existing valuation minimum of two fields; it never becomes zero. The guard always returns eligible=false and decisionAuthorization=false during preparation. No production Radar renderer, scoring or cache is modified. Suite: 144 passing tests.
+
+## Stage closure — 2026-10-13
+
+Preparation is complete for review: real owner session, anonymous blocking, local sample display, source/currency separation and shadow Radar block were confirmed by the owner. All 144 tests passed in the final review; Vercel checks succeeded. This is not activation or commercial readiness. Pending work: dashboard provider selection and authenticated refresh integration, approved caching/licensing model, actual universe coverage and current dates after final subscription, and end-to-end regression. A commercial offering needs a separate commercial data license and customer isolation; the owner-only personal adapter does not satisfy those requirements. Production merge requires explicit user approval and does not enable EODHD by itself.

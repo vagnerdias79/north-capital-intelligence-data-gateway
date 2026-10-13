@@ -36,12 +36,15 @@ pre{white-space:pre-wrap;word-break:break-word;background:#06111d;border:1px sol
 <button id="stabilityTax" class="secondary" hidden>Validar Estabilidade 2.10</button>
 <button id="monitorTax" class="secondary" hidden>Monitorar Saúde 2.11</button>
 <button id="closeTax" class="secondary" hidden>Encerrar Migração 2.12</button>
+<button id="eodhdAuthTest" class="secondary" hidden>Validar acesso EODHD</button>
 <button id="logout" class="secondary" hidden>Sair</button>
 </p>
+<section id="eodhdSamples" hidden></section>
 <pre id="out"></pre>
 </div>
 
 <script type="module">
+import { mountSampleReview } from './assets/eodhd-sample-review.js';
 import { createAuthClient } from 'https://esm.sh/@neondatabase/auth';
 
 const $ = id => document.getElementById(id);
@@ -112,6 +115,11 @@ async function init(){
       stabilityTax.hidden=false;
       monitorTax.hidden=false;
       closeTax.hidden=false;
+      document.getElementById("eodhdAuthTest").hidden=false;
+      mountSampleReview(document.getElementById('eodhdSamples'),async()=>{
+        lastSessionResult=await auth.getSession();
+        return findJwt(lastSessionResult);
+      });
       logout.hidden=false;
     }else{
       status.innerHTML='<span class="warn">Nenhuma sessão ativa.</span>';
@@ -123,6 +131,31 @@ async function init(){
     show({message:String(e?.message||e)});
   }
 }
+
+document.getElementById('eodhdAuthTest').addEventListener('click',async function(){
+  this.disabled=true;
+  status.textContent='Validando sessão no servidor, sem consultar o provedor...';
+  try {
+    lastSessionResult=await auth.getSession();
+    const token=findJwt(lastSessionResult);
+    if(!token)throw new Error('Sessão sem JWT. Entre novamente com Google.');
+    const response=await fetch('/api/fundamentals?provider=eodhd&mode=auth-test',{
+      headers:{Authorization:`Bearer ${token}`},cache:'no-store'
+    });
+    const result=await response.json();
+    const anonymous=await fetch('/api/fundamentals?provider=eodhd&mode=auth-test',{cache:'no-store'});
+    const anonymousResult=await anonymous.json();
+    const blocked=anonymous.status===401&&anonymousResult.error==='NCI_AUTH_REQUIRED';
+    const passed=response.ok&&result.validation==='PASS'&&blocked;
+    status.textContent=passed?'ACESSO EODHD — PASS (sem consulta ao provedor).':
+      result.authenticated&&result.status==='OWNER_NOT_CONFIGURED'&&blocked?
+      'Sessão e bloqueio anônimo validados. Configuração do titular pendente.':
+      'Validação incompleta — veja o resultado abaixo.';
+    show({authenticatedRequest:result,anonymousBlocked:blocked,validation:passed?'PASS':'PENDING',
+      scope:'Somente autenticação; não valida assinatura, dados ou acesso contratado ao EODHD.'});
+  }catch(error){status.textContent='Falha no teste de acesso EODHD.';show({message:String(error?.message||error)});}
+  finally{this.disabled=false;}
+});
 
 login.addEventListener('click', async ()=>{
   status.textContent='Redirecionando para Google...';
