@@ -1,3 +1,4 @@
+import {rehearseUpdateCycle} from './eodhd-update-cycle.js';
 import {rehearseApplication} from './eodhd-application.js';
 import {evaluate} from '../lib/radar/fundamentals-provenance.js';
 const fixtureData=Object.freeze({profitMargin:.2,operatingMargin:.3,returnOnEquity:.25,revenueGrowthYoY:.15,earningsGrowthYoY:.2,forwardPE:22,peg:1.3,priceToSales:5,analystTargetPrice:120,beta:1});
@@ -56,6 +57,11 @@ export function mountRadarSimulation(bar,getToken) {
         {label:'Período antigo: preservar anterior',result:rehearseApplication(previous,makeRow(cases[2]),calculate)},
         {label:'Falha após atualização: preservar resultado',result:rehearseApplication(successful.asset,{...makeRow(cases[0]),ok:false},calculate)}];
       for(const item of rehearsals){const tr=document.createElement('tr');for(const text of [item.label,item.result.applied?'Aplicado somente à cópia':`Preservado (${item.result.reason})`,String(item.result.asset.buyScore),'Nenhuma']){const td=document.createElement('td');td.textContent=text;td.style.padding='10px';tr.append(td);}applicationTable.append(tr);}
+      add('h3','Ciclo integrado — recebimento, validação, cálculo e preservação');
+      const fullCycle=rehearseUpdateCycle({asset:previous,calculate,responses:[makeRow(cases[0]),makeRow(cases[1]),makeRow(cases[2]),{...makeRow(cases[0]),ok:false}]});
+      add('p',`Ciclo fictício: ${fullCycle.refresh.requested} respostas simuladas · ${fullCycle.prepared} atualização preparada na cópia · ${fullCycle.preserved} estados preservados · Aplicados ao operacional: ${fullCycle.operationalApplied}.`);
+      for(const [index,outcome] of fullCycle.outcomes.entries())add('p',`Etapa ${index+1}: ${outcome.status}.`);
+      add('p',`Score final da cópia fictícia: ${fullCycle.candidates[0].buyScore}. Dados preservados após as respostas incompleta, antiga e com falha. Nenhum score de teste conta como fundamento verificado na plataforma.`);
       add('p','Sem consultas ao EODHD, sem armazenamento e sem autorização de decisões. Atualização com dados reais continua pendente.');
       const close=add('button','Fechar simulação');close.type='button';close.onclick=()=>{dialog.close();dialog.remove();};
       document.body.append(dialog);dialog.showModal();
