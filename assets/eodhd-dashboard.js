@@ -1,3 +1,4 @@
+import {mountRadarSimulation} from './eodhd-radar-simulation.js';
 import {mountRefreshPreparation} from './eodhd-refresh.js';
 export function diagnosticState(result, httpStatus=200) {
   if(httpStatus===401)return {status:'LOGIN_REQUIRED',label:'EODHD · entrar',message:'Sessão ausente ou expirada. Entre pela página de autenticação.'};
@@ -34,4 +35,5 @@ export function mountDashboardDiagnostic(getToken) {
   });
   bar.append(button);
   mountRefreshPreparation(bar,getToken);
+  mountRadarSimulation(bar,getToken);
 }
