@@ -1,3 +1,4 @@
+import {rehearseApplication} from './eodhd-application.js';
 import {evaluate} from '../lib/radar/fundamentals-provenance.js';
 const fixtureData=Object.freeze({profitMargin:.2,operatingMargin:.3,returnOnEquity:.25,revenueGrowthYoY:.15,earningsGrowthYoY:.2,forwardPE:22,peg:1.3,priceToSales:5,analystTargetPrice:120,beta:1});
 export function simulationCases(now=new Date().toISOString()) {
@@ -43,6 +44,18 @@ export function mountRadarSimulation(bar,getToken) {
         const result=simulateRadarApplication(item.asset,calculate);
         const tr=document.createElement('tr');for(const value of [item.label,result.simulatedGateStatus,result.simulationScore===null?'Bloqueado':String(result.simulationScore),'Não aplicado']){const td=document.createElement('td');td.textContent=value;td.style.padding='12px';tr.append(td);}table.append(tr);
       }
+      add('h3','Aplicação e preservação dos dados — teste fictício');
+      const applicationTable=add('table','');applicationTable.style.width='100%';
+      const appHead=document.createElement('tr');for(const text of ['Cenário','Resultado','Score na cópia','Aplicação operacional']){const th=document.createElement('th');th.textContent=text;appHead.append(th);}applicationTable.append(appHead);
+      const cases=simulationCases();
+      const previous={...structuredClone(cases[0].asset),buyScore:55};
+      const makeRow=item=>({ticker:'TEST_FIXTURE',source:'TEST_FIXTURE',ok:true,data:item.asset.fundamentals,provenance:item.asset.provenance});
+      const successful=rehearseApplication(previous,makeRow(cases[0]),calculate);
+      const rehearsals=[{label:'Dados suficientes',result:successful},
+        {label:'Dados incompletos: preservar anterior',result:rehearseApplication(previous,makeRow(cases[1]),calculate)},
+        {label:'Período antigo: preservar anterior',result:rehearseApplication(previous,makeRow(cases[2]),calculate)},
+        {label:'Falha após atualização: preservar resultado',result:rehearseApplication(successful.asset,{...makeRow(cases[0]),ok:false},calculate)}];
+      for(const item of rehearsals){const tr=document.createElement('tr');for(const text of [item.label,item.result.applied?'Aplicado somente à cópia':`Preservado (${item.result.reason})`,String(item.result.asset.buyScore),'Nenhuma']){const td=document.createElement('td');td.textContent=text;td.style.padding='10px';tr.append(td);}applicationTable.append(tr);}
       add('p','Sem consultas ao EODHD, sem armazenamento e sem autorização de decisões. Atualização com dados reais continua pendente.');
       const close=add('button','Fechar simulação');close.type='button';close.onclick=()=>{dialog.close();dialog.remove();};
       document.body.append(dialog);dialog.showModal();
