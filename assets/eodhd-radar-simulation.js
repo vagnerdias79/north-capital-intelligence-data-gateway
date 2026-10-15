@@ -1,3 +1,4 @@
+import {rehearsePublication} from './eodhd-publication-rehearsal.js';
 import {rehearseUpdateCycle} from './eodhd-update-cycle.js';
 import {rehearseApplication} from './eodhd-application.js';
 import {evaluate} from '../lib/radar/fundamentals-provenance.js';
@@ -62,6 +63,11 @@ export function mountRadarSimulation(bar,getToken) {
       add('p',`Ciclo fictício: ${fullCycle.refresh.requested} respostas simuladas · ${fullCycle.prepared} atualização preparada na cópia · ${fullCycle.preserved} estados preservados · Aplicados ao operacional: ${fullCycle.operationalApplied}.`);
       for(const [index,outcome] of fullCycle.outcomes.entries())add('p',`Etapa ${index+1}: ${outcome.status}.`);
       add('p',`Score final da cópia fictícia: ${fullCycle.candidates[0].buyScore}. Dados preservados após as respostas incompleta, antiga e com falha. Nenhum score de teste conta como fundamento verificado na plataforma.`);
+      add('h3','Publicação — ensaio somente em cópia fictícia');
+      const publicationCandidate={...structuredClone(successful.asset),fundamentalsProvenance:{...cases[0].asset.provenance}};
+      const publicationNow=new Date().toISOString();
+      const publicationCases=[['Candidato válido',{}],['Base alterada durante a preparação',{current:{...previous,buyScore:56}}],['Candidato vencido antes de publicar',{now:new Date(Date.parse(publicationNow)+72*3600000).toISOString()}]];
+      for(const [label,options] of publicationCases){const result=rehearsePublication({base:previous,current:previous,candidate:publicationCandidate,now:publicationNow,...options});add('p',`${label}: ${result.status} · Aplicados ao operacional: ${result.operationalApplied}.`);}
       add('p','Sem consultas ao EODHD, sem armazenamento e sem autorização de decisões. Atualização com dados reais continua pendente.');
       const close=add('button','Fechar simulação');close.type='button';close.onclick=()=>{dialog.close();dialog.remove();};
       document.body.append(dialog);dialog.showModal();

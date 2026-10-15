@@ -1,0 +1,11 @@
+import test from 'node:test';import assert from 'node:assert/strict';
+import {rehearsePublication} from '../assets/eodhd-publication-rehearsal.js';
+const now='2026-10-15T12:00:00Z';
+const base={ticker:'TEST_FIXTURE',buyScore:55};
+const candidate={ticker:'TEST_FIXTURE',buyScore:66,buyScoreStatus:'VALID',fundamentals:{profitMargin:.2,operatingMargin:.3,returnOnEquity:.2,revenueGrowthYoY:.2,earningsGrowthYoY:.2,forwardPE:20,priceToSales:3,analystTargetPrice:120},fundamentalsProvenance:{provider:'TEST_FIXTURE',retrievedAt:now,sourcePeriodEnd:'2026-06-30'}};
+const run=(overrides={})=>rehearsePublication({base,current:structuredClone(base),candidate,now,...overrides});
+test('publication rehearsal returns an independent synthetic copy and never mutates inputs',()=>{const before=JSON.stringify({base,candidate});const result=run();assert.equal(result.status,'SIMULATED_PUBLISHED');assert.equal(result.operationalApplied,0);result.asset.fundamentals.forwardPE=99;assert.equal(JSON.stringify({base,candidate}),before);});
+test('changed base prevents publication and preserves the latest state',()=>{const current={...base,buyScore:57};const result=run({current});assert.equal(result.status,'BASE_CHANGED');assert.deepEqual(result.asset,current);});
+test('candidate freshness is checked again at publication time',()=>{const result=run({now:'2026-10-18T12:00:00Z'});assert.equal(result.status,'STALE_RETRIEVAL');assert.deepEqual(result.asset,base);});
+test('missing groups and invalid scores cannot be published even with a previously valid flag',()=>{assert.equal(run({candidate:{...candidate,fundamentals:{}}}).status,'INCOMPLETE');for(const buyScore of [null,NaN,101,-1])assert.equal(run({candidate:{...candidate,buyScore}}).status,'INVALID_SCORE');});
+test('real identities, foreign provenance and future dates cannot enter publication rehearsal',()=>{assert.throws(()=>run({candidate:{...candidate,ticker:'MSFT'}}));assert.equal(run({candidate:{...candidate,fundamentalsProvenance:{...candidate.fundamentalsProvenance,provider:'EODHD'}}}).status,'INVALID_PROVENANCE');assert.equal(run({candidate:{...candidate,fundamentalsProvenance:{...candidate.fundamentalsProvenance,retrievedAt:'2027-01-01'}}}).status,'INVALID_DATE');});
